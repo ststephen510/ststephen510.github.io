@@ -1,5 +1,4 @@
 // Vercel Serverless Function for xAI API calls
-const axios = require('axios');
 
 const COMPANIES = [
     // Chemicals & Materials (1-25)
@@ -95,9 +94,13 @@ Rules:
 Generate the job matches now:`;
 
     try {
-        const response = await axios.post(
-            'https://api.x.ai/v1/chat/completions',
-            {
+        const response = await fetch('https://api.x.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${XAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
                 model: 'grok-beta',
                 messages: [
                     {
@@ -111,16 +114,16 @@ Generate the job matches now:`;
                 ],
                 temperature: 0.7,
                 max_tokens: 2000
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${XAI_API_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+            })
+        });
 
-        const grokResponse = response.data.choices[0].message.content;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const grokResponse = data.choices[0].message.content;
         
         let jobs;
         try {
@@ -150,9 +153,9 @@ Generate the job matches now:`;
         res.status(200).json({ jobs });
 
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
+        console.error('API Error:', error.message);
         res.status(500).json({ 
-            error: error.response?.data?.error?.message || error.message || 'Failed to fetch jobs'
+            error: error.message || 'Failed to fetch jobs'
         });
     }
 };
