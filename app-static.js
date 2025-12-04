@@ -225,33 +225,106 @@ document.addEventListener('DOMContentLoaded', () => {
         btnText.classList.add('hidden');
         btnLoader.classList.remove('hidden');
 
-        try {
-            // Try xAI API first if key is configured, otherwise use smart matching
-            let jobs;
-            if (XAI_API_KEY && XAI_API_KEY !== 'YOUR_XAI_API_KEY_HERE') {
-                try {
-                    jobs = await findJobsWithGrok(jobTitleValue, specializationValue, regionValue);
-                } catch (apiError) {
-                    console.log('API unavailable, using intelligent matching:', apiError.message);
+        let retryCount = 0;
+        const maxRetries = 2;
+
+        async function attemptSearch() {
+            try {
+                // Try xAI API first if key is configured, otherwise use smart matching
+                let jobs;
+                let source = 'local';
+                
+                if (XAI_API_KEY && XAI_API_KEY !== 'YOUR_XAI_API_KEY_HERE') {
+                    try {
+                        jobs = await findJobsWithGrok(jobTitleValue, specializationValue, regionValue);
+                        source = 'xai';
+                    } catch (apiError) {
+                        console.log('API unavailable, using intelligent matching:', apiError.message);
+                        jobs = getSmartMockJobs(jobTitleValue, specializationValue, regionValue);
+                        source = 'fallback';
+                        
+                        // Show informative message about fallback
+                        if (apiError.message.includes('401') || apiError.message.includes('authentication')) {
+                            addMessage('⚠️ API authentication issue. Using intelligent matching instead.', 'bot-message warning');
+                        } else if (apiError.message.includes('429') || apiError.message.includes('rate')) {
+                            addMessage('⚠️ API rate limit reached. Using intelligent matching instead.', 'bot-message warning');
+                        } else if (apiError.message.includes('CORS') || apiError.message.includes('network')) {
+                            addMessage('⚠️ Network issue detected. Using intelligent matching instead.', 'bot-message warning');
+                        }
+                    }
+                } else {
+                    // Use smart matching directly if no API key
                     jobs = getSmartMockJobs(jobTitleValue, specializationValue, regionValue);
                 }
-            } else {
-                // Use smart matching directly if no API key
-                jobs = getSmartMockJobs(jobTitleValue, specializationValue, regionValue);
-            }
-            
-            displayResults(jobs);
-            addMessage(`Found ${jobs.length} matching opportunities!`, 'bot-message');
+                
+                displayResults(jobs, source);
+                
+                const sourceLabel = source === 'xai' ? '🤖 AI-powered' : '🔍 Intelligent matching';
+                addMessage(`${sourceLabel}: Found ${jobs.length} matching opportunities!`, 'bot-message');
 
-        } catch (error) {
-            console.error('Error:', error);
-            addMessage(`Error: ${error.message}`, 'bot-message');
-            displayError(error.message);
+            } catch (error) {
+                console.error('Error:', error);
+                
+                // Retry logic
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    addMessage(`⏳ Retrying... (attempt ${retryCount + 1}/${maxRetries + 1})`, 'bot-message');
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                    return attemptSearch();
+                }
+                
+                // Show detailed error with troubleshooting tips
+                const errorDetails = getErrorDetails(error);
+                addMessage(`❌ ${errorDetails.message}`, 'bot-message error');
+                displayError(errorDetails.message, errorDetails.tips);
+            }
+        }
+
+        try {
+            await attemptSearch();
         } finally {
             searchBtn.disabled = false;
             btnText.classList.remove('hidden');
             btnLoader.classList.add('hidden');
         }
+    }
+
+    function getErrorDetails(error) {
+        const message = error.message || 'An unexpected error occurred';
+        let tips = [];
+        
+        if (message.includes('network') || message.includes('fetch') || message.includes('CORS')) {
+            tips = [
+                'Check your internet connection',
+                'Try refreshing the page',
+                'If the issue persists, the API may be temporarily unavailable'
+            ];
+        } else if (message.includes('401') || message.includes('authentication') || message.includes('API key')) {
+            tips = [
+                'The API key may be invalid or expired',
+                'Check if XAI_API_KEY is properly configured in Vercel',
+                'Visit the /api/health endpoint to diagnose configuration issues'
+            ];
+        } else if (message.includes('429') || message.includes('rate')) {
+            tips = [
+                'Too many requests - please wait a moment',
+                'Try again in a few seconds'
+            ];
+        } else if (message.includes('500') || message.includes('server')) {
+            tips = [
+                'The server is experiencing issues',
+                'Try again in a few moments',
+                'Check the Vercel deployment logs for details'
+            ];
+        } else {
+            tips = [
+                'Try refreshing the page',
+                'Check your search criteria',
+                'Visit /api/health to check system status'
+            ];
+        }
+        
+        return { message, tips };
     }
 
     async function findJobsWithGrok(jobTitle, specialization, region) {
@@ -451,9 +524,20 @@ Generate the job matches now:`;
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function displayResults(jobs) {
+    function displayResults(jobs, source = 'local') {
         resultsContainer.classList.remove('hidden');
         jobResults.innerHTML = '';
+
+        // Show source indicator
+        if (source === 'fallback') {
+            const fallbackNotice = document.createElement('div');
+            fallbackNotice.className = 'fallback-notice';
+            fallbackNotice.innerHTML = `
+                <p>🔍 <strong>Intelligent Matching Mode</strong></p>
+                <p>Results are based on keyword matching. For AI-powered results, ensure the xAI API key is configured.</p>
+            `;
+            jobResults.appendChild(fallbackNotice);
+        }
 
         if (!jobs || jobs.length === 0) {
             jobResults.innerHTML = '<p class="error-message">No matching jobs found. Try adjusting your search criteria.</p>';
@@ -496,11 +580,29 @@ Generate the job matches now:`;
         return card;
     }
 
-    function displayError(message) {
+    function displayError(message, tips = []) {
         resultsContainer.classList.remove('hidden');
+        
+        let tipsHtml = '';
+        if (tips && tips.length > 0) {
+            tipsHtml = `
+                <div class="troubleshooting-tips">
+                    <strong>💡 Troubleshooting tips:</strong>
+                    <ul>
+                        ${tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
         jobResults.innerHTML = `
             <div class="error-message">
-                <strong>Error:</strong> ${escapeHtml(message)}
+                <strong>❌ Error:</strong> ${escapeHtml(message)}
+                ${tipsHtml}
+                <p class="error-fallback-hint">
+                    <a href="#" onclick="location.reload(); return false;">Refresh the page</a> to try again, 
+                    or <a href="/api/health" target="_blank">check system status</a>.
+                </p>
             </div>
         `;
     }
