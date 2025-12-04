@@ -88,17 +88,34 @@ git push origin main
 
 ## Troubleshooting
 
-**Issue: "API key not configured"**
-- Make sure you added `XAI_API_KEY` in Vercel dashboard
-- Redeploy after adding environment variables
+### Build Fails
+If you get "npm install exited with 254":
+- The package.json has been simplified to have no dependencies
+- Make sure you're deploying the latest version from main branch
+- Try "Redeploy" in Vercel dashboard
 
-**Issue: CORS errors**
-- The API has CORS enabled for all origins (`*`)
-- Should work from any domain
+### API Returns 500 Error
+1. Check that XAI_API_KEY is set in Vercel:
+   - Go to Settings > Environment Variables
+   - Must be set for "Production" environment
+   - Must start with "xai-"
 
-**Issue: "Module not found"**
-- Make sure `package-backend.json` is deployed
-- Rename it to `package.json` in the api folder if needed
+2. Visit https://YOUR-PROJECT.vercel.app/api/health to check status
+
+3. Check Function Logs in Vercel:
+   - Go to Deployments > Latest > Functions tab
+   - Click on "search-jobs" function
+   - Look for error messages
+
+### CORS Errors
+- The API already has CORS enabled for all origins
+- Make sure your frontend is calling the correct Vercel URL
+- Check that the API URL in app-static.js is correct
+
+### Still Not Working?
+- Visit /api/health endpoint to diagnose
+- Check Vercel function logs for detailed error messages
+- Ensure API key is valid at https://console.x.ai
 
 ---
 
