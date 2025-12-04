@@ -1,6 +1,5 @@
 // Backend-powered version - works with Vercel deployment
-// Change this URL after deploying to Vercel
-const API_URL = 'https://YOUR-PROJECT-NAME.vercel.app/api';
+const API_URL = 'https://arcticulab-backend2.vercel.app/api';
 
 document.addEventListener('DOMContentLoaded', () => {
     const searchBtn = document.getElementById('searchBtn');
