@@ -219,12 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (!XAI_API_KEY || XAI_API_KEY === 'YOUR_XAI_API_KEY_HERE') {
-            addMessage('Please add your xAI API key in app-static.js', 'bot-message');
-            displayError('API key not configured. Edit app-static.js and add your xAI API key.');
-            return;
-        }
-
         addMessage(`Searching for: ${jobTitleValue} in ${specializationValue} (${regionValue})`, 'user-message');
 
         searchBtn.disabled = true;
@@ -232,7 +226,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnLoader.classList.remove('hidden');
 
         try {
-            const jobs = await findJobsWithGrok(jobTitleValue, specializationValue, regionValue);
+            // Try xAI API first if key is configured, otherwise use smart matching
+            let jobs;
+            if (XAI_API_KEY && XAI_API_KEY !== 'YOUR_XAI_API_KEY_HERE') {
+                try {
+                    jobs = await findJobsWithGrok(jobTitleValue, specializationValue, regionValue);
+                } catch (apiError) {
+                    console.log('API unavailable, using intelligent matching:', apiError.message);
+                    jobs = getSmartMockJobs(jobTitleValue, specializationValue, regionValue);
+                }
+            } else {
+                // Use smart matching directly if no API key
+                jobs = getSmartMockJobs(jobTitleValue, specializationValue, regionValue);
+            }
+            
             displayResults(jobs);
             addMessage(`Found ${jobs.length} matching opportunities!`, 'bot-message');
 
@@ -289,9 +296,8 @@ Rules:
 Generate the job matches now:`;
 
         try {
-            // Use CORS proxy to bypass browser restrictions
-            const proxyUrl = 'https://corsproxy.io/?';
-            const response = await fetch(proxyUrl + encodeURIComponent(XAI_API_URL), {
+            // Direct API call - will work if CORS is allowed or from backend
+            const response = await fetch(XAI_API_URL, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${XAI_API_KEY}`,
@@ -316,8 +322,7 @@ Generate the job matches now:`;
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.warn('API call failed, using intelligent fallback:', errorData);
-                return getSmartMockJobs(jobTitle, specialization, region);
+                throw new Error(errorData.error?.message || `API Error: ${response.status}`);
             }
 
             const data = await response.json();
