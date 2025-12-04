@@ -1,5 +1,15 @@
 // Vercel Serverless Function for xAI API calls
 
+// Helper function to create fallback response
+function createFallbackResponse(res, jobTitle, specialization, region, companies, message) {
+    const mockJobs = generateMockJobs(jobTitle, specialization, region, companies);
+    return res.status(200).json({ 
+        jobs: mockJobs,
+        source: 'fallback',
+        message
+    });
+}
+
 // Generate mock jobs based on search criteria for fallback
 function generateMockJobs(jobTitle, specialization, region, companies) {
     const jobLower = jobTitle.toLowerCase();
@@ -128,12 +138,8 @@ module.exports = async (req, res) => {
     // Check if API key is configured
     if (!XAI_API_KEY) {
         console.log('[search-jobs] API key not configured, using fallback mock data');
-        const mockJobs = generateMockJobs(jobTitle, specialization, region, COMPANIES);
-        return res.status(200).json({ 
-            jobs: mockJobs,
-            source: 'fallback',
-            message: 'Using intelligent matching (API key not configured)'
-        });
+        return createFallbackResponse(res, jobTitle, specialization, region, COMPANIES, 
+            'Using intelligent matching (API key not configured)');
     }
 
     console.log(`[search-jobs] Processing request: ${jobTitle} | ${specialization} | ${region}`);
@@ -212,28 +218,16 @@ Generate the job matches now:`;
             // Provide specific error messages based on status code
             if (response.status === 401) {
                 console.log('[search-jobs] Authentication failed, using fallback');
-                const mockJobs = generateMockJobs(jobTitle, specialization, region, COMPANIES);
-                return res.status(200).json({ 
-                    jobs: mockJobs,
-                    source: 'fallback',
-                    message: 'Using intelligent matching (API authentication failed - check your API key)'
-                });
+                return createFallbackResponse(res, jobTitle, specialization, region, COMPANIES,
+                    'Using intelligent matching (API authentication failed - check your API key)');
             } else if (response.status === 429) {
                 console.log('[search-jobs] Rate limited, using fallback');
-                const mockJobs = generateMockJobs(jobTitle, specialization, region, COMPANIES);
-                return res.status(200).json({ 
-                    jobs: mockJobs,
-                    source: 'fallback',
-                    message: 'Using intelligent matching (API rate limit exceeded)'
-                });
+                return createFallbackResponse(res, jobTitle, specialization, region, COMPANIES,
+                    'Using intelligent matching (API rate limit exceeded)');
             } else if (response.status >= 500) {
                 console.log('[search-jobs] xAI service unavailable, using fallback');
-                const mockJobs = generateMockJobs(jobTitle, specialization, region, COMPANIES);
-                return res.status(200).json({ 
-                    jobs: mockJobs,
-                    source: 'fallback',
-                    message: 'Using intelligent matching (xAI service temporarily unavailable)'
-                });
+                return createFallbackResponse(res, jobTitle, specialization, region, COMPANIES,
+                    'Using intelligent matching (xAI service temporarily unavailable)');
             }
             
             throw new Error(errorMessage);
@@ -254,12 +248,8 @@ Generate the job matches now:`;
             }
         } catch (parseError) {
             console.error('[search-jobs] Failed to parse Grok response, using fallback:', parseError.message);
-            const mockJobs = generateMockJobs(jobTitle, specialization, region, COMPANIES);
-            return res.status(200).json({ 
-                jobs: mockJobs,
-                source: 'fallback',
-                message: 'Using intelligent matching (AI response parsing failed)'
-            });
+            return createFallbackResponse(res, jobTitle, specialization, region, COMPANIES,
+                'Using intelligent matching (AI response parsing failed)');
         }
 
         jobs = jobs.filter(job => 
@@ -285,11 +275,7 @@ Generate the job matches now:`;
         console.error('[search-jobs] Unexpected error:', error.message);
         
         // Fallback to mock data instead of returning error
-        const mockJobs = generateMockJobs(jobTitle, specialization, region, COMPANIES);
-        res.status(200).json({ 
-            jobs: mockJobs,
-            source: 'fallback',
-            message: `Using intelligent matching (${error.message})`
-        });
+        return createFallbackResponse(res, jobTitle, specialization, region, COMPANIES,
+            `Using intelligent matching (${error.message})`);
     }
 };

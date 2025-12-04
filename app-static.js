@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Retry logic
                 if (retryCount < maxRetries) {
                     retryCount++;
-                    addMessage(`⏳ Retrying... (attempt ${retryCount + 1}/${maxRetries + 1})`, 'bot-message');
+                    addMessage(`⏳ Retrying... (attempt ${retryCount + 1} of ${maxRetries + 1})`, 'bot-message');
                     await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
                     return attemptSearch();
                 }
@@ -600,8 +600,7 @@ Generate the job matches now:`;
                 <strong>❌ Error:</strong> ${escapeHtml(message)}
                 ${tipsHtml}
                 <p class="error-fallback-hint">
-                    <a href="#" onclick="location.reload(); return false;">Refresh the page</a> to try again, 
-                    or <a href="/api/health" target="_blank">check system status</a>.
+                    <a href="#" onclick="location.reload(); return false;">Refresh the page</a> to try again.
                 </p>
             </div>
         `;
