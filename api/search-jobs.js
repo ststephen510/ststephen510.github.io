@@ -25,10 +25,10 @@ const COMPANIES = [
 ];
 
 module.exports = async (req, res) => {
-    // Log incoming request for debugging
+    // Log incoming request for debugging (sanitized)
     console.log('=== API Request Received ===');
     console.log('Method:', req.method);
-    console.log('Body:', JSON.stringify(req.body));
+    console.log('Has body:', !!req.body);
 
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -46,7 +46,6 @@ module.exports = async (req, res) => {
     // Check for API key
     const XAI_API_KEY = process.env.XAI_API_KEY;
     console.log('API Key configured:', !!XAI_API_KEY);
-    console.log('API Key length:', XAI_API_KEY ? XAI_API_KEY.length : 0);
 
     if (!XAI_API_KEY) {
         console.error('ERROR: XAI_API_KEY not found in environment variables');
