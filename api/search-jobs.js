@@ -25,32 +25,42 @@ const COMPANIES = [
 ];
 
 module.exports = async (req, res) => {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+    // Log incoming request for debugging
+    console.log('=== API Request Received ===');
+    console.log('Method:', req.method);
+    console.log('Body:', JSON.stringify(req.body));
 
-    // Handle preflight
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
     if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+        return res.status(200).end();
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ error: 'Method not allowed. Use POST.' });
     }
 
-    const { jobTitle, specialization, region } = req.body;
-
-    if (!jobTitle || !specialization || !region) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
+    // Check for API key
     const XAI_API_KEY = process.env.XAI_API_KEY;
-    
+    console.log('API Key configured:', !!XAI_API_KEY);
+    console.log('API Key length:', XAI_API_KEY ? XAI_API_KEY.length : 0);
+
     if (!XAI_API_KEY) {
-        return res.status(500).json({ error: 'API key not configured' });
+        console.error('ERROR: XAI_API_KEY not found in environment variables');
+        return res.status(500).json({ 
+            error: 'API key not configured in Vercel environment variables. Please add XAI_API_KEY in your Vercel dashboard.' 
+        });
+    }
+
+    // Validate request body
+    const { jobTitle, specialization, region } = req.body;
+    if (!jobTitle || !specialization || !region) {
+        return res.status(400).json({ 
+            error: 'Missing required fields: jobTitle, specialization, region' 
+        });
     }
 
     const prompt = `You are a job search assistant. Given the following information:
