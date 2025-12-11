@@ -9,11 +9,11 @@ This application uses a **split architecture** for optimal deployment:
 ```
 Frontend (GitHub Pages)          Backend (Vercel)
 https://ststephen510.github.io   https://your-project.vercel.app
-├── public/index.html        →   └── api/search.js
+├── docs/index.html          →   └── api/search.js
 └── (static HTML/CSS/JS)              (serverless function)
 ```
 
-- **Frontend**: Static HTML/CSS/JavaScript hosted on GitHub Pages from `/public` folder
+- **Frontend**: Static HTML/CSS/JavaScript hosted on GitHub Pages from `/docs` folder
 - **Backend**: Serverless API function hosted on Vercel from `/api` folder
 
 ### Why This Architecture?
@@ -31,7 +31,7 @@ https://ststephen510.github.io   https://your-project.vercel.app
 Quick summary:
 1. Deploy backend to Vercel
 2. Update frontend with Vercel URL
-3. Enable GitHub Pages from `/public` folder
+3. Enable GitHub Pages from `/docs` folder
 4. Test the application
 
 ## Features
@@ -56,7 +56,7 @@ Quick summary:
 /
 ├── api/
 │   └── search.js              # Vercel serverless function (backend)
-├── public/
+├── docs/
 │   └── index.html             # Frontend for GitHub Pages
 ├── companies.txt              # List of 180 European companies
 ├── app.js                     # FOR LOCAL DEVELOPMENT ONLY
@@ -127,7 +127,7 @@ If you want to test the application locally before deploying:
 6. **Parse Results**: Extracts job listings from API response
 7. **Return Data**: Sends JSON response with up to 300 ranked jobs
 
-### Frontend (public/index.html) - GitHub Pages
+### Frontend (docs/index.html) - GitHub Pages
 
 1. **User Input**: Collects profession, specialization, and location
 2. **Submit Request**: Sends POST request to Vercel backend at `/api/search`
@@ -230,11 +230,11 @@ Edit `app.js` and change the limit in the prompt or in the results processing:
 
 ### CORS errors when accessing from GitHub Pages
 - Verify that `/api/search.js` includes CORS headers
-- Check that `BACKEND_URL` in `public/index.html` is set to your Vercel URL
+- Check that `BACKEND_URL` in `docs/index.html` is set to your Vercel URL
 - Ensure there's no trailing slash in the URL
 
 ### Frontend doesn't connect to backend
-- Check that you've updated `BACKEND_URL` in `public/index.html` with your actual Vercel URL
+- Check that you've updated `BACKEND_URL` in `docs/index.html` with your actual Vercel URL
 - Verify the backend is deployed and accessible
 - Test backend directly: `curl -X POST https://your-vercel-url.vercel.app/api/search -H "Content-Type: application/json" -d '{"profession":"test","specialization":"test","location":"test"}'`
 
@@ -272,9 +272,9 @@ Edit `app.js` and change the limit in the prompt or in the results processing:
 
 ### Working on the Frontend
 
-1. Make changes to `public/index.html`
+1. Make changes to `docs/index.html`
 2. Test by opening the file in a browser, or
-3. Use the local Express server which serves static files from `/public`
+3. Use the local Express server which serves static files from `/docs`
 
 ### Before Deploying
 

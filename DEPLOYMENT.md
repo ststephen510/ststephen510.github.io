@@ -9,7 +9,7 @@ This guide provides step-by-step instructions to deploy the European Chemical En
 ```
 Frontend (GitHub Pages)          Backend (Vercel)
 https://ststephen510.github.io   https://your-project.vercel.app
-├── public/index.html        →   └── api/search.js
+├── docs/index.html          →   └── api/search.js
                                       (serverless function)
 ```
 
@@ -88,7 +88,7 @@ Now that your backend is deployed, you need to update the frontend to point to i
 ### Step 1: Update index.html
 
 1. Open your local copy of the repository in a code editor
-2. Navigate to: `public/index.html`
+2. Navigate to: `docs/index.html`
 3. Find the line (around line 358):
    ```javascript
    const BACKEND_URL = 'https://YOUR-VERCEL-URL-HERE.vercel.app';
@@ -102,7 +102,7 @@ Now that your backend is deployed, you need to update the frontend to point to i
 ### Step 2: Commit and Push Changes
 
 ```bash
-git add public/index.html
+git add docs/index.html
 git commit -m "Configure backend URL for Vercel deployment"
 git push origin main
 ```
@@ -119,7 +119,7 @@ git push origin main
 4. Under **"Source"**, select:
    - **Source**: "Deploy from a branch"
    - **Branch**: `main`
-   - **Folder**: `/public`
+   - **Folder**: `/docs`
 5. Click **"Save"**
 
 ### Step 2: Wait for Deployment
@@ -170,7 +170,7 @@ Check that the results display:
    ```javascript
    res.setHeader('Access-Control-Allow-Origin', '*');
    ```
-2. Check that you're using the correct Vercel URL in `public/index.html`
+2. Check that you're using the correct Vercel URL in `docs/index.html`
 3. Make sure there's no trailing slash in the `BACKEND_URL`
 
 ### API Returns 500 Error
@@ -303,10 +303,10 @@ vercel dev
 
 ### Updating Frontend Code
 
-1. Make changes to `public/index.html`
+1. Make changes to `docs/index.html`
 2. Commit and push to GitHub:
    ```bash
-   git add public/
+   git add docs/
    git commit -m "Update frontend UI"
    git push origin main
    ```
