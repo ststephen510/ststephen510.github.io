@@ -89,13 +89,13 @@ Now that your backend is deployed, you need to update the frontend to point to i
 
 1. Open your local copy of the repository in a code editor
 2. Navigate to: `public/index.html`
-3. Find the line (around line 316):
+3. Find the line (around line 358):
    ```javascript
-   const BACKEND_URL = 'https://your-project.vercel.app';  // Replace this with your actual Vercel URL
+   const BACKEND_URL = 'https://YOUR-VERCEL-URL-HERE.vercel.app';
    ```
-4. Replace `your-project` with your actual Vercel project name:
+4. Replace `YOUR-VERCEL-URL-HERE` with your actual Vercel project name:
    ```javascript
-   const BACKEND_URL = 'https://my-actual-project.vercel.app';  // Replace this with your actual Vercel URL
+   const BACKEND_URL = 'https://my-actual-project.vercel.app';
    ```
    ⚠️ **Important**: Do NOT include a trailing slash
 
