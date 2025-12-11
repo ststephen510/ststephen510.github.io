@@ -5,8 +5,18 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = async (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'https://ststephen510.github.io');
+  // Set CORS headers - allow GitHub Pages and localhost for development
+  const allowedOrigins = [
+    'https://ststephen510.github.io',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -171,8 +181,7 @@ Return results as a JSON array in this EXACT format:
     console.error('Unexpected error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: error.message
     });
   }
 };

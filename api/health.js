@@ -6,7 +6,6 @@ module.exports = async (req, res) => {
     timestamp: new Date().toISOString(),
     environment: {
       apiKeyConfigured,
-      apiKeyLength: process.env.XAI_API_KEY ? process.env.XAI_API_KEY.length : 0,
       nodeVersion: process.version,
       platform: process.platform
     },
