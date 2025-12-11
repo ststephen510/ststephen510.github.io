@@ -2,6 +2,38 @@
 
 An AI-powered job search platform that helps you discover career opportunities at leading European chemical engineering companies using the xAI Grok API with web search capabilities.
 
+## 🏗️ Architecture
+
+This application uses a **split architecture** for optimal deployment:
+
+```
+Frontend (GitHub Pages)          Backend (Vercel)
+https://ststephen510.github.io   https://your-project.vercel.app
+├── public/index.html        →   └── api/search.js
+└── (static HTML/CSS/JS)              (serverless function)
+```
+
+- **Frontend**: Static HTML/CSS/JavaScript hosted on GitHub Pages from `/public` folder
+- **Backend**: Serverless API function hosted on Vercel from `/api` folder
+
+### Why This Architecture?
+
+✅ **Separation of Concerns**: Frontend and backend deployed independently  
+✅ **Scalability**: Serverless functions scale automatically with demand  
+✅ **Cost-Effective**: GitHub Pages is free; Vercel free tier is generous  
+✅ **Performance**: Static frontend served from CDN  
+✅ **Easy Deployment**: Simple Git push triggers automatic deployments  
+
+## 📋 Deployment Instructions
+
+**👉 See [DEPLOYMENT.md](DEPLOYMENT.md) for complete step-by-step deployment instructions.**
+
+Quick summary:
+1. Deploy backend to Vercel
+2. Update frontend with Vercel URL
+3. Enable GitHub Pages from `/public` folder
+4. Test the application
+
 ## Features
 
 - 🔬 **180 European Companies**: Searches across major chemical engineering companies, research institutes, and industry leaders
@@ -13,20 +45,46 @@ An AI-powered job search platform that helps you discover career opportunities a
 
 ## Tech Stack
 
-- **Frontend**: HTML, CSS, Vanilla JavaScript
-- **Backend**: Node.js, Express.js
+- **Frontend**: HTML, CSS, Vanilla JavaScript (static, hosted on GitHub Pages)
+- **Backend**: Node.js serverless functions (hosted on Vercel)
 - **AI**: xAI Grok API (grok-beta model)
-- **Dependencies**: axios, dotenv, cors
+- **Dependencies**: axios (backend only)
+
+## Project Structure
+
+```
+/
+├── api/
+│   └── search.js              # Vercel serverless function (backend)
+├── public/
+│   └── index.html             # Frontend for GitHub Pages
+├── companies.txt              # List of 180 European companies
+├── app.js                     # FOR LOCAL DEVELOPMENT ONLY
+├── package.json               # Backend dependencies (serverless)
+├── vercel.json                # Vercel configuration
+├── .vercelignore              # Exclude frontend from Vercel
+├── .env.example               # Environment variable template
+├── .gitignore                 # Git ignore file
+├── DEPLOYMENT.md              # Deployment instructions
+└── README.md                  # This file
+```
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
-- npm or yarn
-- xAI API key ([Get one at console.x.ai](https://console.x.ai))
+- **For Deployment**:
+  - GitHub account
+  - Vercel account ([sign up at vercel.com](https://vercel.com))
+  - xAI API key ([get one at console.x.ai](https://console.x.ai))
 
-## Installation
+- **For Local Development** (optional):
+  - Node.js (v14 or higher)
+  - npm or yarn
 
-1. **Clone or download the repository**:
+## Quick Start - Local Development
+
+If you want to test the application locally before deploying:
+
+1. **Clone the repository**:
    ```bash
    git clone <repository-url>
    cd <repository-name>
@@ -34,80 +92,45 @@ An AI-powered job search platform that helps you discover career opportunities a
 
 2. **Install dependencies**:
    ```bash
-   npm install
+   npm install express dotenv cors axios
    ```
 
 3. **Configure environment variables**:
-   - Copy `.env.example` to `.env`:
-     ```bash
-     cp .env.example .env
-     ```
-   - Edit `.env` and add your xAI API key:
-     ```
-     XAI_API_KEY=your_actual_api_key_here
-     ```
-
-## Getting Your xAI API Key
-
-1. Visit [console.x.ai](https://console.x.ai)
-2. Sign in or create an account
-3. Navigate to the API Keys section
-4. Create a new API key
-5. Copy the key and paste it in your `.env` file
-
-## Running the Application
-
-1. **Start the server**:
    ```bash
-   npm start
-   ```
-   
-   Or for development with auto-reload:
-   ```bash
-   npm run dev
+   cp .env.example .env
+   # Edit .env and add: XAI_API_KEY=your_actual_api_key_here
    ```
 
-2. **Open your browser**:
+4. **Run the local development server**:
+   ```bash
+   node app.js
+   ```
+
+5. **Open your browser**:
    - Navigate to `http://localhost:3000`
-   - You should see the job search interface
+   - Test the job search functionality
 
-3. **Search for jobs**:
-   - Enter your profession (e.g., "Chemical Engineer")
-   - Enter your specialization (e.g., "Process Engineering", "Catalysis")
-   - Enter your desired location (e.g., "Germany", "Munich", "Remote")
-   - Click "Search Jobs"
-
-## Project Structure
-
-```
-/
-├── app.js                 # Express backend server
-├── public/
-│   └── index.html        # Frontend interface
-├── companies.txt         # List of 180 European companies
-├── package.json          # Node.js dependencies
-├── .env.example          # Environment variables template
-├── .gitignore           # Git ignore file
-└── README.md            # This file
-```
+**Note**: For production deployment, use the split architecture as described in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## How It Works
 
-### Backend (app.js)
+### Backend (api/search.js) - Vercel Serverless Function
 
-1. **Load Companies**: Reads up to 1000 company names from `companies.txt`
-2. **Construct Prompt**: Creates an intelligent prompt for the Grok API including:
+1. **Receives Request**: POST request with profession, specialization, location
+2. **CORS Handling**: Sets headers to allow requests from GitHub Pages
+3. **Load Companies**: Reads up to 1000 company names from `companies.txt`
+4. **Construct Prompt**: Creates an intelligent prompt for the Grok API including:
    - User's profession, specialization, and location
    - List of companies to search
    - Instructions for web search and ranking
-3. **Call Grok API**: Sends request to `https://api.x.ai/v1/chat/completions`
-4. **Parse Results**: Extracts job listings from API response
-5. **Return Data**: Sends JSON response with up to 300 ranked jobs
+5. **Call Grok API**: Sends request to `https://api.x.ai/v1/chat/completions`
+6. **Parse Results**: Extracts job listings from API response
+7. **Return Data**: Sends JSON response with up to 300 ranked jobs
 
-### Frontend (public/index.html)
+### Frontend (public/index.html) - GitHub Pages
 
 1. **User Input**: Collects profession, specialization, and location
-2. **Submit Request**: Sends POST request to `/search` endpoint
+2. **Submit Request**: Sends POST request to Vercel backend at `/api/search`
 3. **Display Loading**: Shows loading spinner during API call
 4. **Render Results**: Dynamically creates job cards with:
    - Job title
@@ -117,9 +140,9 @@ An AI-powered job search platform that helps you discover career opportunities a
 
 ## API Endpoints
 
-### POST `/search`
+### POST `/api/search`
 
-Search for jobs matching criteria.
+Search for jobs matching criteria (Vercel serverless function).
 
 **Request Body**:
 ```json
@@ -148,18 +171,6 @@ Search for jobs matching criteria.
 ```json
 {
   "error": "Error message description"
-}
-```
-
-### GET `/api/health`
-
-Check server status and configuration.
-
-**Response**:
-```json
-{
-  "status": "ok",
-  "apiKeyConfigured": true
 }
 ```
 
@@ -212,73 +223,84 @@ Edit `app.js` and change the limit in the prompt or in the results processing:
 
 ## Troubleshooting
 
-### "XAI_API_KEY not configured"
-- Ensure you've created a `.env` file with your API key
-- Restart the server after adding the key
-- Check that the key is valid at console.x.ai
+### "API key not configured" error on Vercel
+- Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+- Ensure `XAI_API_KEY` is set correctly
+- Redeploy the project after adding the environment variable
 
-### "companies.txt file not found"
-- Verify the file exists in the root directory
-- Check file permissions
+### CORS errors when accessing from GitHub Pages
+- Verify that `/api/search.js` includes CORS headers
+- Check that `BACKEND_URL` in `public/index.html` is set to your Vercel URL
+- Ensure there's no trailing slash in the URL
 
-### "Failed to connect to xAI API"
-- Check your internet connection
-- Verify the API endpoint is accessible
-- Check for rate limits on your API key
+### Frontend doesn't connect to backend
+- Check that you've updated `BACKEND_URL` in `public/index.html` with your actual Vercel URL
+- Verify the backend is deployed and accessible
+- Test backend directly: `curl -X POST https://your-vercel-url.vercel.app/api/search -H "Content-Type: application/json" -d '{"profession":"test","specialization":"test","location":"test"}'`
+
+### "companies.txt file not found" on Vercel
+- Ensure `companies.txt` is in the root directory of your repository
+- Check that it's not listed in `.vercelignore`
+- Redeploy the Vercel project
 
 ### No jobs found
 - Try broader search criteria
 - Check different locations or specializations
 - Some companies may not have current openings
+- Verify xAI API key is valid and has available credits
 
-### Port already in use
-- Change the PORT in `.env` to a different number (e.g., 3001)
-- Or stop the process using port 3000:
-  ```bash
-  # On Linux/Mac
-  lsof -ti:3000 | xargs kill
-  
-  # On Windows
-  netstat -ano | findstr :3000
-  taskkill /PID <PID> /F
-  ```
+### Local development issues
+- For local development, use `app.js` (not the Vercel function)
+- Install all dependencies: `npm install express dotenv cors axios`
+- Create `.env` file with your API key
+- Run with: `node app.js`
 
 ## Development
 
-To contribute or modify:
+### Working on the Backend
 
-1. Install nodemon for auto-reload:
+1. Make changes to `api/search.js`
+2. Test locally with Vercel CLI:
    ```bash
-   npm install -g nodemon
+   npm install -g vercel
+   vercel dev
+   ```
+3. Or use the local Express server:
+   ```bash
+   node app.js
    ```
 
-2. Run in dev mode:
-   ```bash
-   npm run dev
-   ```
+### Working on the Frontend
 
-3. Make your changes to:
-   - `app.js` for backend logic
-   - `public/index.html` for frontend
-   - `companies.txt` for company list
+1. Make changes to `public/index.html`
+2. Test by opening the file in a browser, or
+3. Use the local Express server which serves static files from `/public`
 
-4. Test thoroughly before committing
+### Before Deploying
+
+1. Test thoroughly locally
+2. Verify all environment variables are set in Vercel
+3. Ensure `.vercelignore` excludes unnecessary files
+4. Check that `companies.txt` is accessible
 
 ## Security Notes
 
 - **Never commit `.env`** to version control (already in `.gitignore`)
 - Keep your xAI API key private and secure
-- Use environment variables for all sensitive data
-- Validate and sanitize all user inputs
+- Store API keys in Vercel environment variables for production
+- Validate and sanitize all user inputs (implemented)
 - The frontend includes XSS protection via HTML escaping
-- Consider implementing rate limiting for production use
+- CORS headers properly configured for GitHub Pages origin
+- Consider implementing rate limiting for production use (not included)
 
 ## Performance Considerations
 
-- API calls may take 10-60 seconds depending on search complexity
-- The Grok API has rate limits - check your plan at console.x.ai
-- Large result sets are automatically limited to 300 jobs
-- Consider caching results for repeated searches (not implemented)
+- **Cold Starts**: First Vercel function invocation may take longer (3-5 seconds)
+- **API Response Time**: Grok API calls may take 10-60 seconds depending on search complexity
+- **Rate Limits**: xAI API has rate limits - check your plan at console.x.ai
+- **Result Limits**: Large result sets are automatically limited to 300 jobs
+- **Caching**: Consider implementing caching for repeated searches (not implemented)
+- **CDN**: Frontend served from GitHub Pages CDN for fast global access
 
 ## Future Enhancements
 

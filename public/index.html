@@ -310,6 +310,11 @@
     </div>
 
     <script>
+        // Backend API URL Configuration
+        // TODO: After deploying to Vercel, replace with your actual Vercel URL
+        // Example: const BACKEND_URL = 'https://your-project.vercel.app';
+        const BACKEND_URL = 'REPLACE_WITH_YOUR_VERCEL_URL';
+        
         // Get DOM elements
         const searchForm = document.getElementById('searchForm');
         const searchButton = document.getElementById('searchButton');
@@ -342,7 +347,7 @@
 
             try {
                 // Send POST request to backend
-                const response = await fetch('/search', {
+                const response = await fetch(`${BACKEND_URL}/api/search`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
