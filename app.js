@@ -12,7 +12,6 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -209,6 +208,9 @@ IMPORTANT:
     }
   }
 });
+
+// Serve static files from public directory (registered after routes)
+app.use(express.static('public'));
 
 // Start the server
 app.listen(PORT, () => {
