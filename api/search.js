@@ -7,7 +7,19 @@ const path = require('path');
 
 module.exports = async (req, res) => {
   // CORS headers - allow requests from GitHub Pages
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // For production, this is restricted to the GitHub Pages domain
+  // Use '*' only for development/testing
+  const allowedOrigins = [
+    'https://ststephen510.github.io',
+    'http://localhost:3000',  // For local testing
+    'http://127.0.0.1:3000'   // For local testing
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+  
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
