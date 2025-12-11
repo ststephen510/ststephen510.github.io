@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>European Chemical Engineering Jobs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .search-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-button:active {
+            transform: translateY(0);
+        }
+
+        .search-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .results-count {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .job-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .job-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .job-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .job-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .job-company {
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .job-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .job-link:hover {
+            background: #5568d3;
+        }
+
+        .error {
+            display: none;
+            background: #fee;
+            border-left: 4px solid #f44;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: 600;
+            color: #c33;
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            color: #666;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .no-results-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .subtitle {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 European Chemical Engineering Jobs</h1>
+            <p class="subtitle">Find your next opportunity at leading European companies</p>
+        </header>
+
+        <div class="search-card">
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="profession">Profession</label>
+                    <input 
+                        type="text" 
+                        id="profession" 
+                        name="profession" 
+                        placeholder="e.g., Chemical Engineer"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="specialization">Specialization</label>
+                    <input 
+                        type="text" 
+                        id="specialization" 
+                        name="specialization" 
+                        placeholder="e.g., Process Engineering, Catalysis, Materials Science"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input 
+                        type="text" 
+                        id="location" 
+                        name="location" 
+                        placeholder="e.g., Germany, Munich, Remote"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="search-button" id="searchButton">
+                    Search Jobs
+                </button>
+            </form>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Searching for jobs using AI... This may take a moment.</p>
+        </div>
+
+        <div class="error" id="error">
+            <div class="error-title">Error</div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <div class="results-count" id="resultsCount"></div>
+            </div>
+            <div class="job-list" id="jobList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const searchForm = document.getElementById('searchForm');
+        const searchButton = document.getElementById('searchButton');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const results = document.getElementById('results');
+        const resultsCount = document.getElementById('resultsCount');
+        const jobList = document.getElementById('jobList');
+
+        // Handle form submission
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form values
+            const profession = document.getElementById('profession').value.trim();
+            const specialization = document.getElementById('specialization').value.trim();
+            const location = document.getElementById('location').value.trim();
+
+            // Validate inputs
+            if (!profession || !specialization || !location) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            // Show loading state
+            showLoading();
+            hideError();
+            hideResults();
+
+            try {
+                // Send POST request to backend
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        profession,
+                        specialization,
+                        location
+                    })
+                });
+
+                // Parse response
+                const data = await response.json();
+
+                // Hide loading
+                hideLoading();
+
+                // Check if request was successful
+                if (!response.ok) {
+                    showError(data.error || 'Failed to search for jobs');
+                    return;
+                }
+
+                // Display results
+                if (data.jobs && data.jobs.length > 0) {
+                    displayResults(data.jobs);
+                } else {
+                    displayNoResults();
+                }
+
+            } catch (err) {
+                hideLoading();
+                console.error('Search error:', err);
+                showError('Failed to connect to the server. Please try again.');
+            }
+        });
+
+        // Show loading indicator
+        function showLoading() {
+            loading.classList.add('active');
+            searchButton.disabled = true;
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            loading.classList.remove('active');
+            searchButton.disabled = false;
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.add('active');
+        }
+
+        // Hide error message
+        function hideError() {
+            error.classList.remove('active');
+        }
+
+        // Show results
+        function showResults() {
+            results.classList.add('active');
+        }
+
+        // Hide results
+        function hideResults() {
+            results.classList.remove('active');
+        }
+
+        // Display job results
+        function displayResults(jobs) {
+            // Update count
+            resultsCount.textContent = `Found ${jobs.length} matching job${jobs.length !== 1 ? 's' : ''}`;
+
+            // Clear previous results
+            jobList.innerHTML = '';
+
+            // Create job cards
+            jobs.forEach((job, index) => {
+                const jobCard = document.createElement('div');
+                jobCard.className = 'job-card';
+                
+                jobCard.innerHTML = `
+                    <div class="job-title">${escapeHtml(job.title)}</div>
+                    <div class="job-company">${escapeHtml(job.company)}</div>
+                    <a href="${escapeHtml(job.link)}" target="_blank" rel="noopener noreferrer" class="job-link">
+                        View Job →
+                    </a>
+                `;
+                
+                jobList.appendChild(jobCard);
+            });
+
+            showResults();
+        }
+
+        // Display no results message
+        function displayNoResults() {
+            resultsCount.textContent = 'No matching jobs found';
+            jobList.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">🔍</div>
+                    <h3>No results found</h3>
+                    <p>Try adjusting your search criteria</p>
+                </div>
+            `;
+            showResults();
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
