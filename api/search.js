@@ -52,6 +52,7 @@ module.exports = async (req, res) => {
     // Read companies from file
     const companiesPath = path.join(process.cwd(), 'companies.txt');
     const companiesText = fs.readFileSync(companiesPath, 'utf-8');
+    // Parse comma-separated companies and limit to 1000 (safety limit for future expansion)
     const companies = companiesText.split(',').map(c => c.trim()).slice(0, 1000);
     
     console.log(`Searching for ${profession} jobs with ${specialization} in ${location}`);

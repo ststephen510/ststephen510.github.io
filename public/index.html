@@ -360,6 +360,12 @@
         async function searchJobs(event) {
             event.preventDefault();
             
+            // Check if backend URL is still the placeholder
+            if (BACKEND_URL.includes('YOUR-VERCEL-URL-HERE')) {
+                showError('⚠️ Backend not configured! Please update the BACKEND_URL in the code with your Vercel deployment URL. See DEPLOYMENT.md for instructions.');
+                return;
+            }
+            
             const profession = document.getElementById('profession').value.trim();
             const specialization = document.getElementById('specialization').value.trim();
             const location = document.getElementById('location').value.trim();
