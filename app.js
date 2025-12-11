@@ -215,8 +215,8 @@ IMPORTANT:
   }
 });
 
-// Serve static files from public directory (registered after routes)
-app.use(express.static('public'));
+// Serve static files from docs directory (registered after routes)
+app.use(express.static('docs'));
 
 // Start the server
 app.listen(PORT, () => {
