@@ -1,22 +1,8 @@
 {
-  "name": "european-chemical-engineering-jobs",
+  "name": "job-search-backend",
   "version": "1.0.0",
-  "description": "Job search platform for European chemical engineering companies using xAI Grok API",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
-  },
-  "keywords": ["xai", "grok", "jobs", "chemical engineering", "europe"],
-  "author": "",
-  "license": "MIT",
+  "description": "Backend API for European chemical engineering job search",
   "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.3.1",
-    "axios": "^1.6.2",
-    "cors": "^2.8.5"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
+    "axios": "^1.6.2"
   }
 }

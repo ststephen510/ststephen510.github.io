@@ -1,63 +1,67 @@
-// FOR LOCAL DEVELOPMENT ONLY
-// This file is NOT used in production. Vercel uses /api/search.js for the backend.
-// This Express server is provided for local testing before deployment.
-
-// European Chemical Engineering Job Search Backend
+// Vercel Serverless Function for European Chemical Engineering Job Search
 // Uses xAI Grok API to search for jobs at European companies
 
-const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(express.json());
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok',
-    apiKeyConfigured: !!process.env.XAI_API_KEY
-  });
-});
-
-// Main search endpoint
-// Note: For production use, consider implementing rate limiting to prevent abuse
-// Example: Use express-rate-limit package to limit requests per IP address
-app.post('/search', async (req, res) => {
+module.exports = async (req, res) => {
+  // CORS headers - allow requests from GitHub Pages
+  // For production, this is restricted to the GitHub Pages domain
+  // Use '*' only for development/testing
+  const allowedOrigins = [
+    'https://ststephen510.github.io',
+    'http://localhost:3000',  // For local testing
+    'http://127.0.0.1:3000'   // For local testing
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
   try {
-    // Validate environment variables
-    if (!process.env.XAI_API_KEY) {
+    // Get API key from environment
+    const XAI_API_KEY = process.env.XAI_API_KEY;
+    if (!XAI_API_KEY) {
       return res.status(500).json({ 
-        error: 'XAI_API_KEY not configured in environment variables' 
+        error: 'API key not configured. Set XAI_API_KEY in Vercel dashboard.' 
       });
     }
-
-    // Extract search parameters from request
+    
+    // Extract and validate request body
     const { profession, specialization, location } = req.body;
-
-    // Validate input parameters
+    
     if (!profession || !specialization || !location) {
       return res.status(400).json({ 
         error: 'Missing required fields: profession, specialization, and location are required' 
       });
     }
-
+    
     console.log(`Search request: ${profession}, ${specialization}, ${location}`);
-
+    
     // Read companies from companies.txt file
-    const companiesFilePath = path.join(__dirname, 'companies.txt');
+    const companiesFilePath = path.join(process.cwd(), 'companies.txt');
     
     if (!fs.existsSync(companiesFilePath)) {
       return res.status(500).json({ 
         error: 'companies.txt file not found' 
       });
     }
-
+    
     const companiesData = fs.readFileSync(companiesFilePath, 'utf-8');
     
     // Parse comma-separated companies and take up to 1000
@@ -66,9 +70,9 @@ app.post('/search', async (req, res) => {
       .map(company => company.trim())
       .filter(company => company.length > 0)
       .slice(0, 1000);
-
+    
     console.log(`Loaded ${companies.length} companies from companies.txt`);
-
+    
     // Construct the prompt for xAI Grok API
     const prompt = `You are a job search assistant specializing in European chemical engineering companies. 
 
@@ -109,7 +113,7 @@ IMPORTANT:
 - Rank by relevance (best matches first)
 - Maximum 300 jobs
 - Return ONLY the JSON array, no additional text`;
-
+    
     // Call xAI Grok API
     console.log('Calling xAI Grok API...');
     
@@ -132,15 +136,15 @@ IMPORTANT:
       },
       {
         headers: {
-          'Authorization': `Bearer ${process.env.XAI_API_KEY}`,
+          'Authorization': `Bearer ${XAI_API_KEY}`,
           'Content-Type': 'application/json'
         },
         timeout: 60000 // 60 second timeout
       }
     );
-
+    
     console.log('Received response from xAI Grok API');
-
+    
     // Extract the response content
     const grokResponse = apiResponse.data.choices[0].message.content;
     
@@ -166,30 +170,30 @@ IMPORTANT:
         rawResponse: grokResponse.substring(0, 500) // First 500 chars for debugging
       });
     }
-
+    
     // Validate and clean the jobs array
     if (!Array.isArray(jobs)) {
       return res.status(500).json({ 
         error: 'Invalid response format from API' 
       });
     }
-
+    
     // Ensure each job has required fields and limit to 300 jobs
     const validJobs = jobs
       .filter(job => job.title && job.company && job.link)
       .slice(0, 300);
-
+    
     console.log(`Returning ${validJobs.length} jobs`);
-
+    
     // Return the jobs to the client
-    res.json({ 
+    res.status(200).json({ 
       jobs: validJobs,
       count: validJobs.length
     });
-
+    
   } catch (error) {
-    console.error('Error in /search endpoint:', error);
-
+    console.error('Error in /api/search endpoint:', error);
+    
     // Handle specific error types
     if (error.response) {
       // API returned an error response
@@ -213,14 +217,4 @@ IMPORTANT:
       });
     }
   }
-});
-
-// Serve static files from public directory (registered after routes)
-app.use(express.static('public'));
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`European Chemical Engineering Jobs server running on port ${PORT}`);
-  console.log(`Visit http://localhost:${PORT} to use the application`);
-  console.log(`API Key configured: ${!!process.env.XAI_API_KEY}`);
-});
+};
