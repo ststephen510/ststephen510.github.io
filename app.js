@@ -22,6 +22,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Main search endpoint
+// Note: For production use, consider implementing rate limiting to prevent abuse
+// Example: Use express-rate-limit package to limit requests per IP address
 app.post('/search', async (req, res) => {
   try {
     // Validate environment variables
