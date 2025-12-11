@@ -27,6 +27,18 @@
             text-align: center;
             color: white;
             margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h1 {
@@ -46,6 +58,18 @@
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             margin-bottom: 30px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .form-group {
@@ -86,7 +110,7 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .search-button:hover {
+        .search-button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
@@ -112,6 +136,7 @@
 
         .loading.active {
             display: block;
+            animation: fadeInUp 0.4s ease-out;
         }
 
         .spinner {
@@ -127,6 +152,30 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            display: none;
+            background: #fee;
+            border-left: 4px solid #f44;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: 600;
+            color: #c33;
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            color: #666;
         }
 
         .results {
@@ -151,7 +200,7 @@
             color: #667eea;
         }
 
-        .job-list {
+        .jobs-grid {
             display: grid;
             gap: 15px;
         }
@@ -162,6 +211,7 @@
             padding: 20px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeInUp 0.4s ease-out;
         }
 
         .job-card:hover {
@@ -169,59 +219,44 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
 
-        .job-title {
+        .job-card h3 {
             font-size: 1.3em;
             font-weight: 600;
             color: #333;
             margin-bottom: 8px;
         }
 
-        .job-company {
+        .company {
             color: #667eea;
             font-weight: 500;
             margin-bottom: 12px;
+            font-size: 1.1em;
         }
 
-        .job-link {
+        .description {
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .apply-btn {
             display: inline-block;
-            padding: 8px 16px;
+            padding: 10px 20px;
             background: #667eea;
             color: white;
             text-decoration: none;
             border-radius: 4px;
             transition: background 0.3s;
+            font-weight: 500;
         }
 
-        .job-link:hover {
+        .apply-btn:hover {
             background: #5568d3;
-        }
-
-        .error {
-            display: none;
-            background: #fee;
-            border-left: 4px solid #f44;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .error.active {
-            display: block;
-        }
-
-        .error-title {
-            font-weight: 600;
-            color: #c33;
-            margin-bottom: 8px;
-        }
-
-        .error-message {
-            color: #666;
         }
 
         .no-results {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
             background: white;
             border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
@@ -232,6 +267,15 @@
             margin-bottom: 20px;
         }
 
+        .no-results h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .no-results p {
+            color: #666;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -239,6 +283,10 @@
             
             .subtitle {
                 font-size: 1em;
+            }
+            
+            .search-card {
+                padding: 20px;
             }
         }
     </style>
@@ -286,7 +334,7 @@
                 </div>
 
                 <button type="submit" class="search-button" id="searchButton">
-                    Search Jobs
+                    Search for Jobs
                 </button>
             </form>
         </div>
@@ -297,173 +345,130 @@
         </div>
 
         <div class="error" id="error">
-            <div class="error-title">Error</div>
+            <div class="error-title">⚠️ Error</div>
             <div class="error-message" id="errorMessage"></div>
         </div>
 
-        <div class="results" id="results">
-            <div class="results-header">
-                <div class="results-count" id="resultsCount"></div>
-            </div>
-            <div class="job-list" id="jobList"></div>
-        </div>
+        <div class="results" id="results"></div>
     </div>
 
     <script>
-        // Backend API URL Configuration
         // TODO: After deploying to Vercel, replace with your actual Vercel URL
-        // Example: const BACKEND_URL = 'https://your-project.vercel.app';
-        const BACKEND_URL = 'https://your-project.vercel.app';  // Replace this with your actual Vercel URL
-        
-        // Get DOM elements
-        const searchForm = document.getElementById('searchForm');
-        const searchButton = document.getElementById('searchButton');
-        const loading = document.getElementById('loading');
-        const error = document.getElementById('error');
-        const errorMessage = document.getElementById('errorMessage');
-        const results = document.getElementById('results');
-        const resultsCount = document.getElementById('resultsCount');
-        const jobList = document.getElementById('jobList');
+        // Example: https://ststephen510-github-io.vercel.app
+        const BACKEND_URL = 'https://YOUR-VERCEL-URL-HERE.vercel.app';
 
-        // Handle form submission
-        searchForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            // Get form values
+        async function searchJobs(event) {
+            event.preventDefault();
+            
             const profession = document.getElementById('profession').value.trim();
             const specialization = document.getElementById('specialization').value.trim();
             const location = document.getElementById('location').value.trim();
-
-            // Validate inputs
+            
             if (!profession || !specialization || !location) {
                 showError('Please fill in all fields');
                 return;
             }
-
-            // Show loading state
-            showLoading();
-            hideError();
-            hideResults();
-
+            
+            showLoading(true);
+            clearResults();
+            clearError();
+            
             try {
-                // Send POST request to backend
                 const response = await fetch(`${BACKEND_URL}/api/search`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        profession,
-                        specialization,
-                        location
-                    })
+                    body: JSON.stringify({ profession, specialization, location })
                 });
-
-                // Parse response
-                const data = await response.json();
-
-                // Hide loading
-                hideLoading();
-
-                // Check if request was successful
+                
                 if (!response.ok) {
-                    showError(data.error || 'Failed to search for jobs');
-                    return;
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to search jobs');
                 }
-
-                // Display results
-                if (data.jobs && data.jobs.length > 0) {
-                    displayResults(data.jobs);
-                } else {
-                    displayNoResults();
-                }
-
-            } catch (err) {
-                hideLoading();
-                console.error('Search error:', err);
-                showError('Failed to connect to the server. Please try again.');
+                
+                const data = await response.json();
+                displayResults(data.jobs);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
             }
-        });
-
-        // Show loading indicator
-        function showLoading() {
-            loading.classList.add('active');
-            searchButton.disabled = true;
         }
 
-        // Hide loading indicator
-        function hideLoading() {
-            loading.classList.remove('active');
-            searchButton.disabled = false;
-        }
-
-        // Show error message
-        function showError(message) {
-            errorMessage.textContent = message;
-            error.classList.add('active');
-        }
-
-        // Hide error message
-        function hideError() {
-            error.classList.remove('active');
-        }
-
-        // Show results
-        function showResults() {
-            results.classList.add('active');
-        }
-
-        // Hide results
-        function hideResults() {
-            results.classList.remove('active');
-        }
-
-        // Display job results
         function displayResults(jobs) {
-            // Update count
-            resultsCount.textContent = `Found ${jobs.length} matching job${jobs.length !== 1 ? 's' : ''}`;
-
-            // Clear previous results
-            jobList.innerHTML = '';
-
-            // Create job cards
-            jobs.forEach((job, index) => {
-                const jobCard = document.createElement('div');
-                jobCard.className = 'job-card';
-                
-                jobCard.innerHTML = `
-                    <div class="job-title">${escapeHtml(job.title)}</div>
-                    <div class="job-company">${escapeHtml(job.company)}</div>
-                    <a href="${escapeHtml(job.link)}" target="_blank" rel="noopener noreferrer" class="job-link">
-                        View Job →
-                    </a>
+            const resultsDiv = document.getElementById('results');
+            
+            if (!jobs || jobs.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h3>No jobs found</h3>
+                        <p>Try different search criteria</p>
+                    </div>
                 `;
-                
-                jobList.appendChild(jobCard);
+                resultsDiv.classList.add('active');
+                return;
+            }
+            
+            let html = `<div class="results-header"><div class="results-count">Found ${jobs.length} jobs</div></div><div class="jobs-grid">`;
+            
+            jobs.forEach(job => {
+                html += `
+                    <div class="job-card">
+                        <h3>${escapeHtml(job.title)}</h3>
+                        <p class="company">${escapeHtml(job.company)}</p>
+                        ${job.description ? `<p class="description">${escapeHtml(job.description)}</p>` : ''}
+                        <a href="${escapeHtml(job.link)}" target="_blank" rel="noopener noreferrer" class="apply-btn">
+                            Apply Now →
+                        </a>
+                    </div>
+                `;
             });
-
-            showResults();
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('active');
         }
 
-        // Display no results message
-        function displayNoResults() {
-            resultsCount.textContent = 'No matching jobs found';
-            jobList.innerHTML = `
-                <div class="no-results">
-                    <div class="no-results-icon">🔍</div>
-                    <h3>No results found</h3>
-                    <p>Try adjusting your search criteria</p>
-                </div>
-            `;
-            showResults();
-        }
-
-        // Escape HTML to prevent XSS
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const searchButton = document.getElementById('searchButton');
+            
+            if (show) {
+                loading.classList.add('active');
+                searchButton.disabled = true;
+            } else {
+                loading.classList.remove('active');
+                searchButton.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            error.classList.add('active');
+        }
+
+        function clearError() {
+            document.getElementById('error').classList.remove('active');
+        }
+
+        function clearResults() {
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Attach event listener
+        document.getElementById('searchForm').addEventListener('submit', searchJobs);
     </script>
 </body>
 </html>
