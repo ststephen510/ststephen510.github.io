@@ -17,6 +17,7 @@ function isDeepLink(url) {
     const urlObj = new URL(url);
     const pathname = urlObj.pathname.toLowerCase();
     const search = urlObj.search.toLowerCase();
+    const hostname = urlObj.hostname.toLowerCase();
     
     // Check for job ID patterns in query parameters
     const jobIdPatterns = [
@@ -28,22 +29,24 @@ function isDeepLink(url) {
       if (pattern.test(search)) return true;
     }
     
+    // Check for known job platforms (these are always deep links)
+    if (hostname.includes('lever.co') && pathname.length > 1) return true;
+    if (hostname.includes('greenhouse.io') && pathname.includes('/jobs/')) return true;
+    if (hostname.includes('workdayjobs.com') && pathname.includes('/job/')) return true;
+    if (hostname.includes('myworkdayjobs.com') && pathname.includes('/job/')) return true;
+    if (hostname.includes('smartrecruiters.com') && /\/\d+/.test(pathname)) return true;
+    if (hostname.includes('personio.') && /\/job\/\d+/.test(pathname)) return true;
+    
     // Check for deep link path patterns
     const deepLinkPatterns = [
-      /\/jobs?\/[^/]+\/[^/]+/, // /jobs/company/id or /job/location/id
-      /\/careers?\/[^/]+\/[^/]+/, // /careers/positions/id
+      /\/jobs?\/[^/]+\/[^/]+/, // /jobs/company/id or /job/location/id (3+ segments)
+      /\/careers?\/[^/]+\/[^/]+/, // /careers/positions/id (3+ segments)
       /\/apply\/[^/]+/, // /apply/123456
       /\/position[s]?\/[^/]+/, // /positions/123456
       /\/vacancy\/[^/]+/, // /vacancy/123456
       /\/opening[s]?\/[^/]+/, // /openings/123456
-      /lever\.co\/[^/]+\/[^/]+/, // lever.co links
-      /greenhouse\.io\/[^/]+\/jobs\/\d+/, // greenhouse links
-      /workdayjobs\.com\/.*\/job\//, // workday links
-      /myworkdayjobs\.com\/.*\/job\//, // myworkday links
-      /smartrecruiters\.com\/.*\/\d+/, // smartrecruiters links
-      /personio\.(de|com)\/job\/\d+/, // personio links
-      /jobs?\/[a-zA-Z0-9-_]{8,}/, // /jobs/long-job-id
-      /careers?\/[a-zA-Z0-9-_]{8,}/, // /careers/long-job-id
+      /\/jobs?\/[a-zA-Z0-9-_]{5,}/, // /jobs/long-job-id (at least 5 chars, typical job IDs)
+      /\/careers?\/[a-zA-Z0-9-_]{5,}/, // /careers/long-job-id (at least 5 chars)
     ];
     
     for (const pattern of deepLinkPatterns) {
