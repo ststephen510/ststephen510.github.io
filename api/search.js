@@ -111,17 +111,19 @@ Profession: ${profession}
 Specialization: ${specialization}
 Location: ${location}
 
-Companies to prioritize (search these first): ${companies.join(', ')}
+Companies to search. Find the career website of all of these: ${companies.join(', ')}
 
 Instructions:
-1. Find up to 300 real, current job postings
-2. Include jobs from the listed companies AND other relevant employers
+0. You speak German and English. Search for the same criterias by translating the criterias in both laguages.
+1. Find on the career website of these companies between 100 and 300 open jobs that fit from 70 to 80 percent the job search. Safe the URL of the Job with Job ID.
+2. Include jobs from only the listed companies.
 3. Rank results by relevance (best matches first)
 4. For each job, provide:
-   - Job title
+   - Job title, use the original language. If the Job title is in German then German, if in English then English
    - Company name
+   - Location
    - Direct application link (URL)
-   - Brief description (1-2 sentences)
+  5. The jobs must be real live jobs
 
 Return results as a JSON array in this EXACT format:
 {
@@ -130,7 +132,7 @@ Return results as a JSON array in this EXACT format:
       "title": "Job Title",
       "company": "Company Name",
       "link": "https://example.com/job",
-      "description": "Brief description"
+      "location": "location"
     }
   ]
 }`;
