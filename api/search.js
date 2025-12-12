@@ -20,6 +20,7 @@ function isDeepLink(url) {
     const hostname = urlObj.hostname.toLowerCase();
     
     // Check for job ID patterns in query parameters
+    // Note: 'id' parameter is generic but placed after specific patterns to reduce false positives
     const jobIdPatterns = [
       /[?&](jobid|gh_jid|id|job_id|position_id|vacancy_id|req_id|requisition_id)=/i,
       /[?&]p=/i, // common short parameter for position
@@ -45,8 +46,8 @@ function isDeepLink(url) {
       /\/position[s]?\/[^/]+/, // /positions/123456
       /\/vacancy\/[^/]+/, // /vacancy/123456
       /\/opening[s]?\/[^/]+/, // /openings/123456
-      /\/jobs?\/[a-zA-Z0-9-_]{5,}/, // /jobs/long-job-id (at least 5 chars, typical job IDs)
-      /\/careers?\/[a-zA-Z0-9-_]{5,}/, // /careers/long-job-id (at least 5 chars)
+      /\/jobs?\/[a-zA-Z0-9-_]{5,}/, // /jobs/long-job-id (min 5 chars helps filter out listing pages like /jobs/1)
+      /\/careers?\/[a-zA-Z0-9-_]{5,}/, // /careers/long-job-id (min 5 chars)
     ];
     
     for (const pattern of deepLinkPatterns) {

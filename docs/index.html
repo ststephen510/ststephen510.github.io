@@ -335,6 +335,12 @@
             color: #666;
         }
 
+        .warning-message {
+            margin-top: 15px;
+            color: #f39c12;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -621,7 +627,7 @@
                         <div class="no-results-icon">🔍</div>
                         <h3>No jobs found</h3>
                         <p>Try different search criteria</p>
-                        ${warning ? `<p style="margin-top: 15px; color: #f39c12; font-weight: 500;">⚠️ ${warning}</p>` : ''}
+                        ${warning ? `<p class="warning-message">⚠️ ${warning}</p>` : ''}
                     </div>
                 `;
                 resultsDiv.classList.add('active');
@@ -630,7 +636,7 @@
             
             let html = `<div class="results-header">
                 <div class="results-count">Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''}</div>
-                ${warning ? `<p style="margin-top: 10px; color: #f39c12; font-weight: 500;">⚠️ ${warning}</p>` : ''}
+                ${warning ? `<p class="warning-message" style="margin-top: 10px;">⚠️ ${warning}</p>` : ''}
             </div><div class="jobs-grid">`;
             
             jobs.forEach(job => {
