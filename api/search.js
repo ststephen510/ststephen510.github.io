@@ -93,7 +93,7 @@ module.exports = async (req, res) => {
       
       console.log(`[${requestId}] Reading companies from: ${companiesPath} (${pathUsed})`);
       const companiesText = fs.readFileSync(companiesPath, 'utf-8');
-      companies = companiesText.split(',').map(c => c.trim()).filter(c => c.length > 0).slice(0, 1000);
+      companies = companiesText.split(',').map(c => c.trim()).filter(c => c.length > 0).slice(0, 5);
       console.log(`[${requestId}] Loaded ${companies.length} companies`);
     } catch (fileError) {
       console.error(`[${requestId}] ERROR reading companies.txt:`, fileError.message);
@@ -115,15 +115,17 @@ Companies to search. Find the career website of all of these: ${companies.join('
 
 Instructions:
 0. You speak German and English. Search for the same criterias by translating the criterias in both laguages.
-1. Find on the career website of these companies between 100 and 300 open jobs that fit from 70 to 80 percent the job search. Safe the URL of the Job with Job ID.
+1. Find on the career website of these companies open jobs that fit from 70 to 80 percent the job search. Safe the URL of the Job with Job ID.
 2. Include jobs from only the listed companies.
-3. Rank results by relevance (best matches first)
-4. For each job, provide:
+3. Verify that each job URL is real and links to a live job posting hosted on verified career websites. The URL must be accessible and valid.
+4. Use your web search and reasoning capabilities step-by-step to validate that the job postings exist and are currently active.
+5. Rank results by relevance (best matches first)
+6. For each job, provide:
    - Job title, use the original language. If the Job title is in German then German, if in English then English
    - Company name
    - Location
-   - Direct application link (URL)
-  5. The jobs must be real live jobs
+   - Direct application link (URL) - must be a valid, accessible URL to a live job posting
+7. Only include verified, real, live job postings with valid URLs
 
 Return results as a JSON array in this EXACT format:
 {
@@ -240,8 +242,8 @@ Return results as a JSON array in this EXACT format:
       jobs = [];
     }
 
-    // Limit to 300 jobs
-    jobs = jobs.slice(0, 300);
+    // Limit to 10 jobs
+    jobs = jobs.slice(0, 10);
 
     const duration = Date.now() - startTime;
     console.log(`[${requestId}] END - Returning ${jobs.length} jobs - Duration: ${duration}ms`);
