@@ -4,7 +4,7 @@
   "description": "Backend API for European chemical engineering job search",
   "main": "api/search.js",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   },
   "dependencies": {}
 }

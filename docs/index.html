@@ -453,6 +453,8 @@
             clearError();
             clearResults();
             
+            const currentOrigin = window.location.origin;
+            
             try {
                 const requestId = generateRequestId();
                 const response = await fetch(`${BACKEND_URL}/api/health`, {
@@ -470,14 +472,34 @@
                 }
                 
                 if (response.ok) {
-                    showError(`✅ Backend test successful!\n\nStatus: ${data.status}\nAPI Key Configured: ${data.environment?.apiKeyConfigured ? 'Yes' : 'No'}\nNode Version: ${data.environment?.nodeVersion || 'Unknown'}\nRequest ID: ${requestId}\nTimestamp: ${data.timestamp || 'Unknown'}`);
+                    showError(`✅ Backend test successful!\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nStatus: ${data.status}\nAPI Key Configured: ${data.environment?.apiKeyConfigured ? 'Yes' : 'No'}\nNode Version: ${data.environment?.nodeVersion || 'Unknown'}\nRequest ID: ${requestId}\nTimestamp: ${data.timestamp || 'Unknown'}`);
                     document.getElementById('error').style.background = '#efe';
                     document.getElementById('error').style.borderLeftColor = '#4c4';
                 } else {
-                    showError(`❌ Backend test failed\n\nHTTP Status: ${response.status}\nRequest ID: ${requestId}\nResponse: ${JSON.stringify(data, null, 2)}`);
+                    showError(`❌ Backend test failed\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nHTTP Status: ${response.status}\nRequest ID: ${requestId}\nResponse: ${JSON.stringify(data, null, 2)}`);
                 }
             } catch (error) {
-                showError(`❌ Backend connection failed\n\nError: ${error.message}\n\nPlease check:\n1. BACKEND_URL is correct\n2. Backend is deployed\n3. CORS is configured`);
+                // Enhanced error diagnostics for CORS issues
+                let errorMsg = `❌ Backend connection failed\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nError Type: ${error.name}\nError Message: ${error.message}\n\n`;
+                
+                if (error.message.includes('Load failed') || error.name === 'TypeError') {
+                    errorMsg += '⚠️ This looks like a CORS error!\n\n';
+                    errorMsg += 'Possible causes:\n';
+                    errorMsg += '1. Your current origin may not be in the backend CORS allowlist\n';
+                    errorMsg += '2. The backend may not be deployed or accessible\n';
+                    errorMsg += '3. Network connection issues\n\n';
+                    errorMsg += 'To fix:\n';
+                    errorMsg += `- If accessing from ${currentOrigin}, ensure this origin is in the allowedOrigins array in api/health.js and api/search.js\n`;
+                    errorMsg += '- Verify BACKEND_URL is correct\n';
+                    errorMsg += '- Check browser console for detailed CORS error messages';
+                } else {
+                    errorMsg += 'Please check:\n';
+                    errorMsg += '1. BACKEND_URL is correct\n';
+                    errorMsg += '2. Backend is deployed\n';
+                    errorMsg += '3. Network connection';
+                }
+                
+                showError(errorMsg);
             } finally {
                 testButton.disabled = false;
                 testButton.textContent = '🔧 Test Backend Connection';
@@ -547,6 +569,8 @@
                     
                     // Debug information
                     const debugInfo = {
+                        'Current Origin': window.location.origin,
+                        'BACKEND_URL': BACKEND_URL,
                         'HTTP Status': response.status,
                         'xAI Status': status !== response.status ? status : 'N/A',
                         'Request ID': returnedRequestId,
@@ -565,7 +589,23 @@
                 // Only show error if not already shown
                 const errorDiv = document.getElementById('error');
                 if (!errorDiv.classList.contains('active')) {
-                    showError(`Network error: ${error.message}`);
+                    // Enhanced error diagnostics for network/CORS issues
+                    const currentOrigin = window.location.origin;
+                    let errorMsg = `Network error: ${error.message}`;
+                    
+                    const debugInfo = {
+                        'Current Origin': currentOrigin,
+                        'BACKEND_URL': BACKEND_URL,
+                        'Error Type': error.name,
+                        'Request ID': requestId,
+                        'Timestamp': new Date().toISOString()
+                    };
+                    
+                    if (error.message.includes('Load failed') || error.name === 'TypeError') {
+                        errorMsg = `❌ Request blocked - likely CORS issue\n\nError: ${error.message}\n\n⚠️ Your current origin (${currentOrigin}) may not be in the backend CORS allowlist.\n\nTo fix: Add ${currentOrigin} to allowedOrigins in api/search.js`;
+                    }
+                    
+                    showError(errorMsg, debugInfo);
                 }
             } finally {
                 showLoading(false);
