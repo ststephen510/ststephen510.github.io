@@ -132,8 +132,7 @@ Final Output (JSON only, no explanations):
       "link": "Full, verified HTTPS URL to live posting",
       "location": "Exact location from posting"
     }
-  ],
-  "reasoning_summary": "Brief 1-sentence summary of verifications (e.g., 'Verified 3 jobs from 2 companies via official sites')"
+  ]
 }`;
 
     console.log(`[${requestId}] Calling xAI Grok API with model: ${model}`);
@@ -165,8 +164,6 @@ Final Output (JSON only, no explanations):
           ],
           temperature: 0.2,
           max_tokens: 3000
-          top_p: 0.9,         // Optional: Add for nucleus sampling; keeps diversity low while allowing some flexibility
-  fre     quency_penalty: 0.5  // Optional: Add to penalize repetitions (e.g., duplicate fake links)
         }),
         signal: controller.signal
       });
