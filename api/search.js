@@ -62,6 +62,9 @@ module.exports = async (req, res) => {
       });
     }
 
+    // Get model from environment or use default
+    const model = process.env.XAI_MODEL || 'grok-3';
+
     // Validate request body
     const { profession, specialization, location } = req.body;
     if (!profession || !specialization || !location) {
@@ -132,7 +135,7 @@ Return results as a JSON array in this EXACT format:
   ]
 }`;
 
-    console.log(`[${requestId}] Calling xAI Grok API...`);
+    console.log(`[${requestId}] Calling xAI Grok API with model: ${model}`);
 
     // Set up timeout using AbortController (Node 18+)
     const controller = new AbortController();
@@ -148,7 +151,7 @@ Return results as a JSON array in this EXACT format:
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'grok-beta',
+          model,
           messages: [
             {
               role: 'system',
@@ -189,7 +192,9 @@ Return results as a JSON array in this EXACT format:
       if (response.status === 401) {
         hint = 'Invalid API key. Verify XAI_API_KEY in Vercel environment variables';
       } else if (response.status === 403) {
-        hint = 'Access forbidden. Check if your API key has access to the grok-beta model';
+        hint = `Access forbidden. Check if your API key has access to the ${model} model`;
+      } else if (response.status === 404) {
+        hint = 'Model not found or deprecated. Try setting XAI_MODEL=grok-3 in Vercel environment variables';
       } else if (response.status === 429) {
         hint = 'Rate limit exceeded. Wait a moment and try again, or upgrade your xAI plan';
       } else if (response.status >= 500) {

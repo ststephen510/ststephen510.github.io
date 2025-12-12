@@ -47,7 +47,7 @@ Quick summary:
 
 - **Frontend**: HTML, CSS, Vanilla JavaScript (static, hosted on GitHub Pages)
 - **Backend**: Node.js serverless functions (hosted on Vercel)
-- **AI**: xAI Grok API (grok-beta model)
+- **AI**: xAI Grok API (grok-3 model, configurable via XAI_MODEL)
 - **Dependencies**: axios (backend only)
 
 ## Project Structure
@@ -98,7 +98,9 @@ If you want to test the application locally before deploying:
 3. **Configure environment variables**:
    ```bash
    cp .env.example .env
-   # Edit .env and add: XAI_API_KEY=your_actual_api_key_here
+   # Edit .env and add:
+   # XAI_API_KEY=your_actual_api_key_here
+   # XAI_MODEL=grok-3 (optional, defaults to grok-3)
    ```
 
 4. **Run the local development server**:
@@ -211,8 +213,18 @@ Company Name 1, Company Name 2, Company Name 3
 Set the `PORT` environment variable in your `.env` file:
 ```
 XAI_API_KEY=your_key_here
+XAI_MODEL=grok-3
 PORT=8080
 ```
+
+### Using a Different xAI Model
+
+Set the `XAI_MODEL` environment variable in your `.env` file:
+```
+XAI_MODEL=grok-3
+```
+
+If not set, the application defaults to `grok-3`. Check the [xAI documentation](https://docs.x.ai) for available models.
 
 ### Modifying the Search Limit
 
@@ -225,7 +237,7 @@ Edit `app.js` and change the limit in the prompt or in the results processing:
 
 ### "API key not configured" error on Vercel
 - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
-- Ensure `XAI_API_KEY` is set correctly
+- Ensure `XAI_API_KEY` is set correctly (and optionally `XAI_MODEL` if you want to use a different model)
 - Redeploy the project after adding the environment variable
 
 ### CORS errors when accessing from GitHub Pages
