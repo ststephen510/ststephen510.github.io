@@ -176,6 +176,65 @@
 
         .error-message {
             color: #666;
+            margin-bottom: 12px;
+        }
+
+        .error-debug {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .error-debug-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #666;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .error-debug-title:hover {
+            color: #333;
+        }
+
+        .error-debug-content {
+            display: none;
+            margin-top: 8px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .error-debug-content.visible {
+            display: block;
+        }
+
+        .test-button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .test-button:hover:not(:disabled) {
+            background: #e0e0e0;
+            border-color: #999;
+        }
+
+        .test-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .results {
@@ -336,6 +395,10 @@
                 <button type="submit" class="search-button" id="searchButton">
                     Search for Jobs
                 </button>
+
+                <button type="button" class="test-button" id="testButton" onclick="testBackend()">
+                    🔧 Test Backend Connection
+                </button>
             </form>
         </div>
 
@@ -347,6 +410,12 @@
         <div class="error" id="error">
             <div class="error-title">⚠️ Error</div>
             <div class="error-message" id="errorMessage"></div>
+            <div class="error-debug" id="errorDebug" style="display: none;">
+                <div class="error-debug-title" onclick="toggleDebug()">
+                    ▶ Show debug information
+                </div>
+                <div class="error-debug-content" id="errorDebugContent"></div>
+            </div>
         </div>
 
         <div class="results" id="results"></div>
@@ -356,6 +425,64 @@
         // TODO: After deploying to Vercel, replace with your actual Vercel URL
         // Example: https://ststephen510-github-io.vercel.app
         const BACKEND_URL = 'https://ststephen510-github-io.vercel.app';
+
+        // Generate a random request ID
+        function generateRequestId() {
+            return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+
+        // Toggle debug information visibility
+        function toggleDebug() {
+            const content = document.getElementById('errorDebugContent');
+            const title = document.querySelector('.error-debug-title');
+            if (content.classList.contains('visible')) {
+                content.classList.remove('visible');
+                title.textContent = '▶ Show debug information';
+            } else {
+                content.classList.add('visible');
+                title.textContent = '▼ Hide debug information';
+            }
+        }
+
+        // Test backend connection
+        async function testBackend() {
+            const testButton = document.getElementById('testButton');
+            testButton.disabled = true;
+            testButton.textContent = '🔄 Testing...';
+            
+            clearError();
+            clearResults();
+            
+            try {
+                const requestId = generateRequestId();
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Request-Id': requestId
+                    }
+                });
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = { error: 'Invalid JSON response' };
+                }
+                
+                if (response.ok) {
+                    showError(`✅ Backend test successful!\n\nStatus: ${data.status}\nAPI Key Configured: ${data.environment?.apiKeyConfigured ? 'Yes' : 'No'}\nNode Version: ${data.environment?.nodeVersion || 'Unknown'}\nRequest ID: ${requestId}\nTimestamp: ${data.timestamp || 'Unknown'}`);
+                    document.getElementById('error').style.background = '#efe';
+                    document.getElementById('error').style.borderLeftColor = '#4c4';
+                } else {
+                    showError(`❌ Backend test failed\n\nHTTP Status: ${response.status}\nRequest ID: ${requestId}\nResponse: ${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                showError(`❌ Backend connection failed\n\nError: ${error.message}\n\nPlease check:\n1. BACKEND_URL is correct\n2. Backend is deployed\n3. CORS is configured`);
+            } finally {
+                testButton.disabled = false;
+                testButton.textContent = '🔧 Test Backend Connection';
+            }
+        }
 
         async function searchJobs(event) {
             event.preventDefault();
@@ -379,25 +506,67 @@
             clearResults();
             clearError();
             
+            // Generate request ID for this search
+            const requestId = generateRequestId();
+            
             try {
                 const response = await fetch(`${BACKEND_URL}/api/search`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Request-Id': requestId
                     },
                     body: JSON.stringify({ profession, specialization, location })
                 });
                 
+                let errorData;
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to search jobs');
+                    // Try to parse JSON, fallback to text
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        const text = await response.text();
+                        errorData = { 
+                            error: 'Server returned non-JSON response', 
+                            details: text.substring(0, 500) 
+                        };
+                    }
+                    
+                    // Build comprehensive error message
+                    const errorMsg = errorData.error || 'Failed to search jobs';
+                    const status = errorData.status || response.status;
+                    const hint = errorData.hint || 'Check server logs for details';
+                    const details = errorData.details || '';
+                    const returnedRequestId = errorData.requestId || requestId;
+                    
+                    // User-friendly message
+                    let userMessage = `${errorMsg}`;
+                    if (hint && hint !== errorMsg) {
+                        userMessage += `\n\n💡 ${hint}`;
+                    }
+                    
+                    // Debug information
+                    const debugInfo = {
+                        'HTTP Status': response.status,
+                        'xAI Status': status !== response.status ? status : 'N/A',
+                        'Request ID': returnedRequestId,
+                        'Details': details || 'None',
+                        'Timestamp': new Date().toISOString()
+                    };
+                    
+                    showError(userMessage, debugInfo);
+                    throw new Error(errorMsg);
                 }
                 
                 const data = await response.json();
                 displayResults(data.jobs);
                 
             } catch (error) {
-                showError(error.message);
+                // Only show error if not already shown
+                const errorDiv = document.getElementById('error');
+                if (!errorDiv.classList.contains('active')) {
+                    showError(`Network error: ${error.message}`);
+                }
             } finally {
                 showLoading(false);
             }
@@ -457,10 +626,29 @@
             }
         }
 
-        function showError(message) {
+        function showError(message, debugInfo) {
             const error = document.getElementById('error');
             const errorMessage = document.getElementById('errorMessage');
+            const errorDebug = document.getElementById('errorDebug');
+            const errorDebugContent = document.getElementById('errorDebugContent');
+            
+            // Reset styling (in case it was changed by test button)
+            error.style.background = '#fee';
+            error.style.borderLeftColor = '#f44';
+            
             errorMessage.textContent = message;
+            
+            if (debugInfo) {
+                let debugText = '';
+                for (const [key, value] of Object.entries(debugInfo)) {
+                    debugText += `${key}: ${value}\n`;
+                }
+                errorDebugContent.textContent = debugText;
+                errorDebug.style.display = 'block';
+            } else {
+                errorDebug.style.display = 'none';
+            }
+            
             error.classList.add('active');
         }
 

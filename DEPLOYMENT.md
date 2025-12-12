@@ -159,6 +159,99 @@ Check that the results display:
 
 ---
 
+## Debugging
+
+When troubleshooting issues with the application, you now have comprehensive debugging instrumentation:
+
+### Where to Find Logs
+
+**Vercel Function Logs:**
+1. Go to [vercel.com](https://vercel.com) and select your project
+2. Click **"Deployments"** → select the latest deployment
+3. Scroll to **"Function Logs"** or click **"View Function Logs"**
+4. Each request is now tagged with a unique Request ID for easy correlation
+
+**Request ID Correlation:**
+- Every request now includes an `X-Request-Id` header
+- Frontend generates and displays the Request ID when errors occur
+- Backend logs all operations with the Request ID prefix: `[abc123xyz456]`
+- Use the Request ID to find related log entries in Vercel
+
+**Example Vercel Log Output:**
+```
+[a1b2c3d4e5f6] START POST /api/search - Origin: https://ststephen510.github.io
+[a1b2c3d4e5f6] Searching for: Chemical Engineer - Process Engineering - Germany
+[a1b2c3d4e5f6] Reading companies from: /var/task/companies.txt (__dirname-based)
+[a1b2c3d4e5f6] Loaded 150 companies
+[a1b2c3d4e5f6] Calling xAI Grok API...
+[a1b2c3d4e5f6] Received response from xAI, parsing...
+[a1b2c3d4e5f6] END - Returning 42 jobs - Duration: 8234ms
+```
+
+### Frontend Error Display
+
+When a search fails, the UI now shows:
+- **User-friendly error message** with actionable hints
+- **HTTP Status Code** from the backend
+- **xAI Status Code** (if different from HTTP status)
+- **Request ID** for log correlation
+- **Expandable debug section** with detailed information
+
+**Example Error Display:**
+```
+⚠️ Error
+xAI API request failed
+
+💡 Rate limit exceeded. Wait a moment and try again, or upgrade your xAI plan
+
+▶ Show debug information
+  HTTP Status: 429
+  xAI Status: 429
+  Request ID: a1b2c3d4e5f6
+  Details: {"error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}}
+  Timestamp: 2025-12-12T02:38:22.774Z
+```
+
+### Testing Backend Connection
+
+The frontend now includes a **"Test Backend Connection"** button that:
+- Calls `/api/health` endpoint
+- Displays backend status, API key configuration, and Node version
+- Shows Request ID for correlation
+- Helps diagnose connectivity issues before running searches
+
+### Common Error Scenarios
+
+**1. API Key Issues (Status 401/403):**
+- **Hint shown:** "Invalid API key" or "Access forbidden"
+- **What to check:** Vercel environment variables, API key validity
+- **Logs show:** `[requestId] ERROR: XAI_API_KEY not found` or xAI 401/403 response
+
+**2. Rate Limiting (Status 429):**
+- **Hint shown:** "Rate limit exceeded. Wait a moment..."
+- **What to check:** xAI console for usage limits
+- **Logs show:** `[requestId] xAI API error: 429`
+
+**3. Timeout (Status 504):**
+- **Hint shown:** "Request timed out"
+- **What to do:** Try again or simplify search criteria
+- **Logs show:** `[requestId] ERROR: xAI request timed out`
+
+**4. Server Errors (Status 500+):**
+- **Hint shown:** "xAI service error. Try again..."
+- **What to do:** Wait a few moments, check xAI status page
+- **Logs show:** `[requestId] xAI API error: 500` with response snippet
+
+### No Secrets Logged
+
+The debugging instrumentation is designed to be safe:
+- ✅ API keys are **never** logged or returned in responses
+- ✅ Only first 500 characters of error responses are logged
+- ✅ All sensitive data remains in Vercel environment variables
+- ✅ Request IDs are random and don't contain user data
+
+---
+
 ## Troubleshooting
 
 ### CORS Errors
