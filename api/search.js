@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
     }
 
     // Get model from environment or use default
-    const model = process.env.XAI_MODEL || 'grok-3';
+    const model = process.env.XAI_MODEL || 'grok-4-1-fast-reasoning';
 
     // Validate request body
     const { profession, specialization, location } = req.body;
