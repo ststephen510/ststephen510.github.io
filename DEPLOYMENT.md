@@ -50,11 +50,19 @@ This is **critical** for the application to work:
 
 1. Scroll down to **"Environment Variables"** section
 2. Click **"Add"** or expand the section
-3. Add the following:
+3. Add the following environment variables:
+   
+   **Required:**
    - **Name**: `XAI_API_KEY`
    - **Value**: Your xAI API key (get it from [https://console.x.ai](https://console.x.ai))
    - **Environment**: Select all environments (Production, Preview, Development)
-4. Click the checkmark to save
+   
+   **Optional (recommended):**
+   - **Name**: `XAI_MODEL`
+   - **Value**: `grok-3` (or another model - defaults to `grok-3` if not set)
+   - **Environment**: Select all environments (Production, Preview, Development)
+   
+4. Click the checkmark to save each variable
 
 **Getting your xAI API Key:**
 - Visit [https://console.x.ai](https://console.x.ai)
@@ -62,6 +70,11 @@ This is **critical** for the application to work:
 - Navigate to the API Keys section
 - Create a new API key
 - Copy the key and paste it as the value
+
+**Note on XAI_MODEL:**
+- The default model is `grok-3`
+- If you don't set this variable, the application will use `grok-3` automatically
+- Set this if you want to use a different xAI model (check [xAI documentation](https://docs.x.ai) for available models)
 
 ### Step 5: Deploy
 
@@ -378,8 +391,9 @@ To run the application locally before deploying:
 # Install all dependencies (including express)
 npm install express dotenv cors
 
-# Create .env file with your API key
+# Create .env file with your API key and model
 echo "XAI_API_KEY=your_key_here" > .env
+echo "XAI_MODEL=grok-3" >> .env
 
 # Run the server
 node app.js
@@ -436,9 +450,13 @@ vercel dev
 
 1. Go to Vercel Dashboard → Your Project
 2. Click **Settings** → **Environment Variables**
-3. Update the value of `XAI_API_KEY` or add new variables
+3. Update the value of `XAI_API_KEY` or `XAI_MODEL`, or add new variables
 4. Go to **Deployments** tab
 5. Click **"Redeploy"** on the latest deployment to apply changes
+
+**Available Environment Variables:**
+- `XAI_API_KEY` (required): Your xAI API key
+- `XAI_MODEL` (optional): The xAI model to use (defaults to `grok-3` if not set)
 
 ---
 
