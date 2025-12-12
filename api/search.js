@@ -4,7 +4,19 @@
 const fs = require('fs');
 const path = require('path');
 
+// Generate a random request ID
+function generateRequestId() {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
 module.exports = async (req, res) => {
+  // Request-scoped logging: read or generate requestId
+  const requestId = req.headers['x-request-id'] || generateRequestId();
+  const startTime = Date.now();
+  
+  // Log request start
+  console.log(`[${requestId}] START ${req.method} ${req.url} - Origin: ${req.headers.origin || 'unknown'}`);
+
   // Set CORS headers - allow GitHub Pages and localhost for development
   const allowedOrigins = [
     'https://ststephen510.github.io',
@@ -18,18 +30,22 @@ module.exports = async (req, res) => {
   }
   
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Request-Id');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
+    console.log(`[${requestId}] OPTIONS request - CORS preflight`);
     return res.status(200).end();
   }
 
   // Only allow POST requests
   if (req.method !== 'POST') {
+    console.log(`[${requestId}] ERROR: Method not allowed - ${req.method}`);
     return res.status(405).json({ 
       error: 'Method not allowed. Use POST.',
-      hint: 'This endpoint only accepts POST requests.'
+      hint: 'This endpoint only accepts POST requests.',
+      requestId
     });
   }
 
@@ -37,38 +53,50 @@ module.exports = async (req, res) => {
     // Validate API key
     const XAI_API_KEY = process.env.XAI_API_KEY;
     if (!XAI_API_KEY) {
-      console.error('ERROR: XAI_API_KEY not found in environment variables');
+      console.error(`[${requestId}] ERROR: XAI_API_KEY not found in environment variables`);
       return res.status(500).json({ 
         error: 'API key not configured',
-        hint: 'Add XAI_API_KEY in Vercel Dashboard → Settings → Environment Variables'
+        hint: 'Add XAI_API_KEY in Vercel Dashboard → Settings → Environment Variables',
+        requestId
       });
     }
 
     // Validate request body
     const { profession, specialization, location } = req.body;
     if (!profession || !specialization || !location) {
+      console.log(`[${requestId}] ERROR: Missing required fields`);
       return res.status(400).json({ 
         error: 'Missing required fields',
         required: ['profession', 'specialization', 'location'],
-        received: { profession, specialization, location }
+        received: { profession, specialization, location },
+        requestId
       });
     }
 
-    console.log(`Searching for: ${profession} - ${specialization} - ${location}`);
+    console.log(`[${requestId}] Searching for: ${profession} - ${specialization} - ${location}`);
 
-    // Read companies from file
+    // Read companies from file with improved path resolution
     let companies = [];
     try {
-      const companiesPath = path.join(process.cwd(), 'companies.txt');
-      console.log('Reading companies from:', companiesPath);
+      // Try __dirname-based path first (more reliable in Vercel), fallback to process.cwd()
+      let companiesPath = path.join(__dirname, '..', 'companies.txt');
+      let pathUsed = '__dirname-based';
+      
+      if (!fs.existsSync(companiesPath)) {
+        companiesPath = path.join(process.cwd(), 'companies.txt');
+        pathUsed = 'process.cwd()-based';
+      }
+      
+      console.log(`[${requestId}] Reading companies from: ${companiesPath} (${pathUsed})`);
       const companiesText = fs.readFileSync(companiesPath, 'utf-8');
       companies = companiesText.split(',').map(c => c.trim()).filter(c => c.length > 0).slice(0, 1000);
-      console.log(`Loaded ${companies.length} companies`);
+      console.log(`[${requestId}] Loaded ${companies.length} companies`);
     } catch (fileError) {
-      console.error('Error reading companies.txt:', fileError.message);
+      console.error(`[${requestId}] ERROR reading companies.txt:`, fileError.message);
       return res.status(500).json({ 
         error: 'Failed to load companies database',
-        details: fileError.message
+        details: fileError.message,
+        requestId
       });
     }
 
@@ -103,39 +131,76 @@ Return results as a JSON array in this EXACT format:
   ]
 }`;
 
-    console.log('Calling xAI Grok API...');
+    console.log(`[${requestId}] Calling xAI Grok API...`);
+
+    // Set up timeout using AbortController (Node 18+)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000); // 55s timeout (Vercel has 60s limit)
 
     // Call xAI Grok API using native fetch (available in Node.js 18+)
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${XAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'grok-beta',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful job search assistant that finds real job postings and returns structured JSON data.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000
-      })
-    });
+    let response;
+    try {
+      response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${XAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'grok-beta',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful job search assistant that finds real job postings and returns structured JSON data.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 4000
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      if (fetchError.name === 'AbortError') {
+        console.error(`[${requestId}] ERROR: xAI request timed out`);
+        return res.status(504).json({
+          error: 'Request timed out',
+          details: 'The xAI API did not respond within 55 seconds',
+          hint: 'Try again or simplify your search criteria',
+          requestId
+        });
+      }
+      throw fetchError;
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('xAI API error:', response.status, errorText);
+      const errorSnippet = errorText.substring(0, 500);
+      console.error(`[${requestId}] xAI API error: ${response.status}`, errorSnippet);
+      
+      // Provide actionable hints based on status code
+      let hint = 'Check xAI API status and your request';
+      if (response.status === 401) {
+        hint = 'Invalid API key. Verify XAI_API_KEY in Vercel environment variables';
+      } else if (response.status === 403) {
+        hint = 'Access forbidden. Check if your API key has access to the grok-beta model';
+      } else if (response.status === 429) {
+        hint = 'Rate limit exceeded. Wait a moment and try again, or upgrade your xAI plan';
+      } else if (response.status >= 500) {
+        hint = 'xAI service error. Try again in a few moments';
+      }
+      
       return res.status(response.status).json({ 
         error: 'xAI API request failed',
         status: response.status,
-        details: errorText
+        details: errorSnippet,
+        hint,
+        requestId
       });
     }
 
@@ -143,14 +208,15 @@ Return results as a JSON array in this EXACT format:
     const grokResponse = apiData.choices?.[0]?.message?.content;
 
     if (!grokResponse) {
-      console.error('No response from xAI API');
+      console.error(`[${requestId}] No response from xAI API`);
       return res.status(500).json({ 
         error: 'No response from AI',
-        details: 'The AI did not return any content'
+        details: 'The AI did not return any content',
+        requestId
       });
     }
 
-    console.log('Received response from xAI, parsing...');
+    console.log(`[${requestId}] Received response from xAI, parsing...`);
 
     // Parse JSON from response
     let jobs = [];
@@ -160,8 +226,8 @@ Return results as a JSON array in this EXACT format:
       const parsed = JSON.parse(cleanedResponse);
       jobs = parsed.jobs || [];
     } catch (parseError) {
-      console.error('Failed to parse JSON:', parseError.message);
-      console.log('Raw response:', grokResponse.substring(0, 500));
+      console.error(`[${requestId}] Failed to parse JSON:`, parseError.message);
+      console.log(`[${requestId}] Raw response:`, grokResponse.substring(0, 500));
       // Return empty array instead of failing
       jobs = [];
     }
@@ -169,19 +235,23 @@ Return results as a JSON array in this EXACT format:
     // Limit to 300 jobs
     jobs = jobs.slice(0, 300);
 
-    console.log(`Returning ${jobs.length} jobs`);
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] END - Returning ${jobs.length} jobs - Duration: ${duration}ms`);
 
     return res.status(200).json({ 
       jobs,
       count: jobs.length,
-      query: { profession, specialization, location }
+      query: { profession, specialization, location },
+      requestId
     });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[${requestId}] ERROR - Unexpected error after ${duration}ms:`, error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message
+      details: error.message,
+      requestId
     });
   }
 };
