@@ -2,6 +2,7 @@ module.exports = async (req, res) => {
   // Add CORS headers for diagnostics
   const allowedOrigins = [
     'https://ststephen510.github.io',
+    'https://ststephen510-github-io.vercel.app',
     'http://localhost:3000',
     'http://127.0.0.1:3000'
   ];

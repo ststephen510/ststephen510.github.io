@@ -256,15 +256,40 @@ The debugging instrumentation is designed to be safe:
 
 ### CORS Errors
 
-**Symptom**: Console shows CORS policy errors, or you get network errors
+**Symptom**: Console shows CORS policy errors, `TypeError: Load failed`, or network errors when testing backend or searching
 
 **Solutions**:
-1. Verify that `/api/search.js` includes CORS headers:
-   ```javascript
-   res.setHeader('Access-Control-Allow-Origin', '*');
-   ```
-2. Check that you're using the correct Vercel URL in `docs/index.html`
-3. Make sure there's no trailing slash in the `BACKEND_URL`
+1. **Check your access origin**: The backend CORS allowlist includes:
+   - `https://ststephen510.github.io` (GitHub Pages)
+   - `https://ststephen510-github-io.vercel.app` (Vercel frontend)
+   - `http://localhost:3000` and `http://127.0.0.1:3000` (local development)
+   
+2. **If accessing from a different Vercel domain** (e.g., preview deployments):
+   - Add your Vercel preview URL to `allowedOrigins` in both `api/health.js` and `api/search.js`
+   - Example: `'https://ststephen510-github-io-abc123.vercel.app'`
+   - Redeploy the backend after making changes
+   
+3. **Use the Test Backend Connection button**: This will show you:
+   - Your current origin
+   - The configured BACKEND_URL
+   - Whether the request is being blocked by CORS
+   - Specific guidance if your origin isn't in the allowlist
+
+4. Check that you're using the correct Vercel URL in `docs/index.html`
+5. Make sure there's no trailing slash in the `BACKEND_URL`
+
+### Node Version Issues
+
+**Symptom**: Backend behaves unexpectedly after redeployment, or `/api/health` reports an unexpected Node version
+
+**Background**: The `package.json` now pins Node to version 20.x to prevent runtime drift. Previously, the configuration allowed `>=18.0.0`, which let Vercel automatically upgrade to newer versions (like v24) that could introduce incompatibilities.
+
+**Solutions**:
+1. Verify `package.json` specifies: `"node": "20.x"` (not `>=18.0.0`)
+2. After updating `package.json`, redeploy in Vercel
+3. Check `/api/health` to confirm the Node version is in the 20.x range
+4. If you need a different version, update `package.json` and redeploy (don't use ranges like `>=` unless you want automatic upgrades)
+
 
 ### API Returns 500 Error
 

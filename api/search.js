@@ -20,6 +20,7 @@ module.exports = async (req, res) => {
   // Set CORS headers - allow GitHub Pages and localhost for development
   const allowedOrigins = [
     'https://ststephen510.github.io',
+    'https://ststephen510-github-io.vercel.app',
     'http://localhost:3000',
     'http://127.0.0.1:3000'
   ];
