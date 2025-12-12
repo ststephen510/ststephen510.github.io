@@ -31,12 +31,13 @@ function isDeepLink(url) {
     }
     
     // Check for known job platforms (these are always deep links)
-    if (hostname.includes('lever.co') && pathname.length > 1) return true;
-    if (hostname.includes('greenhouse.io') && pathname.includes('/jobs/')) return true;
-    if (hostname.includes('workdayjobs.com') && pathname.includes('/job/')) return true;
-    if (hostname.includes('myworkdayjobs.com') && pathname.includes('/job/')) return true;
-    if (hostname.includes('smartrecruiters.com') && /\/\d+/.test(pathname)) return true;
-    if (hostname.includes('personio.') && /\/job\/\d+/.test(pathname)) return true;
+    // Use endsWith to prevent subdomain spoofing (e.g., evil.com?redirect=greenhouse.io)
+    if ((hostname === 'lever.co' || hostname.endsWith('.lever.co')) && pathname.length > 1) return true;
+    if ((hostname === 'greenhouse.io' || hostname.endsWith('.greenhouse.io')) && pathname.includes('/jobs/')) return true;
+    if ((hostname === 'workdayjobs.com' || hostname.endsWith('.workdayjobs.com')) && pathname.includes('/job/')) return true;
+    if ((hostname === 'myworkdayjobs.com' || hostname.endsWith('.myworkdayjobs.com')) && pathname.includes('/job/')) return true;
+    if ((hostname === 'smartrecruiters.com' || hostname.endsWith('.smartrecruiters.com')) && /\/\d+/.test(pathname)) return true;
+    if ((hostname.endsWith('.personio.de') || hostname.endsWith('.personio.com')) && /\/job\/\d+/.test(pathname)) return true;
     
     // Check for deep link path patterns
     const deepLinkPatterns = [
