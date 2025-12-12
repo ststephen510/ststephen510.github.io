@@ -105,7 +105,7 @@ module.exports = async (req, res) => {
     }
 
     // Construct prompt for xAI Grok API
-const prompt = `You are a precise job search assistant. Your ONLY goal is to find and verify REAL, LIVE job postings from the specified companies. You MUST use your web search and reasoning abilities to access and validate current data. DO NOT fabricate, invent, or guess any information—especially URLs. If you cannot verify a job posting as active and accessible right now, exclude it entirely.
+const prompt = `You are a precise job search assistant. Find current, real job openings that closely match:
 
 Criteria:
 - Profession: ${profession}
@@ -113,13 +113,15 @@ Criteria:
 - Location: ${location}
 - Companies (search ONLY their official career pages): ${companies.join(', ')}
 
-Step-by-Step Process (show this in your reasoning before JSON):
-1. Translate criteria to German and English.
-2. For EACH company: Search for their official careers page (e.g., "CompanyName careers site").
-3. On that page, search for jobs matching 70-80% of criteria (use exact phrases in both languages).
-4. For each potential match: Verify the URL loads a live posting (describe your verification briefly, e.g., "Accessed via search; page title matches job").
-5. Confirm: Job is open, from the company, in/near location, and URL is HTTPS, ends in /job/ or similar, hosted on company's domain.
-6. Rank by relevance (70-80% match highest).
+Rules:
+
+If you cannot find at least 1 real, current openings that you are 99% sure exist right now, return an empty array — never guess.
+
+1. Use your up-to-date knowledge and search capability to find the official career pages.
+2. Look for jobs that match at least 70% of the criteria (in German OR English).
+3. Prefer direct links from the company’s own website (greenhouse, lever, workday, sap, etc.).
+4. NEVER invent or hallucinate URLs. If you are not 100% sure a job is live right now, skip it.
+5. Return maximum 10 jobs, ranked by relevance.
 
 Output ONLY valid, verified jobs. If none found, return empty jobs array.
 
@@ -127,10 +129,10 @@ Final Output (JSON only, no explanations):
 {
   "jobs": [
     {
-      "title": "Exact Job Title (original language: German or English)",
-      "company": "Exact Company Name",
-      "link": "Full, verified HTTPS URL to live posting",
-      "location": "Exact location from posting"
+      "title": "Original job title (German or English)",
+      "company": "Exact company name",
+      "location": "City/Region from the posting",
+      "link": "Direct application URL"
     }
   ]
 }`;
@@ -162,7 +164,7 @@ Final Output (JSON only, no explanations):
               content: prompt
             }
           ],
-          temperature: 0.2,
+          temperature: 0.3,
           max_tokens: 3000
         }),
         signal: controller.signal
