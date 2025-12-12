@@ -9,6 +9,82 @@ function generateRequestId() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+// Check if a URL is a deep link to a specific job posting
+function isDeepLink(url) {
+  if (!url) return false;
+  
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname.toLowerCase();
+    const search = urlObj.search.toLowerCase();
+    
+    // Check for job ID patterns in query parameters
+    const jobIdPatterns = [
+      /[?&](jobid|gh_jid|id|job_id|position_id|vacancy_id|req_id|requisition_id)=/i,
+      /[?&]p=/i, // common short parameter for position
+    ];
+    
+    for (const pattern of jobIdPatterns) {
+      if (pattern.test(search)) return true;
+    }
+    
+    // Check for deep link path patterns
+    const deepLinkPatterns = [
+      /\/jobs?\/[^/]+\/[^/]+/, // /jobs/company/id or /job/location/id
+      /\/careers?\/[^/]+\/[^/]+/, // /careers/positions/id
+      /\/apply\/[^/]+/, // /apply/123456
+      /\/position[s]?\/[^/]+/, // /positions/123456
+      /\/vacancy\/[^/]+/, // /vacancy/123456
+      /\/opening[s]?\/[^/]+/, // /openings/123456
+      /lever\.co\/[^/]+\/[^/]+/, // lever.co links
+      /greenhouse\.io\/[^/]+\/jobs\/\d+/, // greenhouse links
+      /workdayjobs\.com\/.*\/job\//, // workday links
+      /myworkdayjobs\.com\/.*\/job\//, // myworkday links
+      /smartrecruiters\.com\/.*\/\d+/, // smartrecruiters links
+      /personio\.(de|com)\/job\/\d+/, // personio links
+      /jobs?\/[a-zA-Z0-9-_]{8,}/, // /jobs/long-job-id
+      /careers?\/[a-zA-Z0-9-_]{8,}/, // /careers/long-job-id
+    ];
+    
+    for (const pattern of deepLinkPatterns) {
+      if (pattern.test(pathname)) return true;
+    }
+    
+    // Reject generic career/jobs pages (ending with just /careers, /jobs, etc.)
+    const genericPatterns = [
+      /^\/(careers?\/?|jobs?\/?|opportunities\/?|vacancies\/?|openings?\/?)$/i,
+      /^\/(en|de|fr|es|it|nl)?\/?careers?\/?$/i,
+      /^\/(en|de|fr|es|it|nl)?\/?jobs?\/?$/i,
+    ];
+    
+    for (const pattern of genericPatterns) {
+      if (pattern.test(pathname)) return false;
+    }
+    
+    return false;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Deduplicate jobs by title, company, and link
+function deduplicateJobs(jobs) {
+  const seen = new Set();
+  const deduplicated = [];
+  
+  for (const job of jobs) {
+    // Create a normalized key for deduplication
+    const key = `${(job.title || '').toLowerCase().trim()}|${(job.company || '').toLowerCase().trim()}|${(job.link || '').toLowerCase().trim()}`;
+    
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(job);
+    }
+  }
+  
+  return deduplicated;
+}
+
 module.exports = async (req, res) => {
   // Request-scoped logging: read or generate requestId
   const requestId = req.headers['x-request-id'] || generateRequestId();
@@ -114,14 +190,34 @@ Location: ${location}
 Companies to prioritize (search these first): ${companies.join(', ')}
 
 Instructions:
-1. Find up to 300 real, current job postings
+1. Find exactly up to 50 real, current job postings
 2. Include jobs from the listed companies AND other relevant employers
-3. Rank results by relevance (best matches first)
-4. For each job, provide:
-   - Job title
-   - Company name
-   - Direct application link (URL)
-   - Brief description (1-2 sentences)
+3. Rank results by relevance (EXACT matches first, then strong matches, then possible matches)
+4. For each job, you MUST provide:
+   - Job title (required)
+   - Company name (required)
+   - Location (city/country, required)
+   - Direct job posting URL with deep link (required)
+   - Brief description 1-2 sentences (required)
+   - Date posted if available (optional)
+
+CRITICAL URL REQUIREMENTS - Each job link MUST be a deep link to the specific job posting:
+- FORBIDDEN: Company home pages (e.g., https://company.com, https://company.com/)
+- FORBIDDEN: Generic careers landing pages (e.g., https://company.com/careers, https://company.com/jobs, https://company.com/careers/, https://company.com/jobs/)
+- FORBIDDEN: Search results pages without unique job identifiers
+- REQUIRED: URLs must contain a recognizable job ID pattern or path segment such as:
+  * /jobs/123456 or /job/123456
+  * /careers/positions/123456
+  * ?jobId=123456 or ?gh_jid=123456 or ?id=123456
+  * lever.co/company/job-title-id
+  * greenhouse.io/company/jobs/123456
+  * workdayjobs.com/company/job/location/job-title/JR123456
+  * myworkdayjobs.com/company/job/
+  * smartrecruiters.com/Company/123456
+  * personio.de/job/123456
+  * any URL with /apply/, /position/, /vacancy/, /opening/ followed by an identifier
+- If you cannot find a deep link to a specific job posting, you MUST OMIT that job entirely
+- Only include jobs where you have found an actual, specific job posting URL
 
 Return results as a JSON array in this EXACT format:
 {
@@ -129,8 +225,10 @@ Return results as a JSON array in this EXACT format:
     {
       "title": "Job Title",
       "company": "Company Name",
-      "link": "https://example.com/job",
-      "description": "Brief description"
+      "location": "City, Country",
+      "link": "https://example.com/jobs/12345",
+      "description": "Brief description",
+      "datePosted": "2024-01-15" (optional, omit if not available)
     }
   ]
 }`;
@@ -238,18 +336,59 @@ Return results as a JSON array in this EXACT format:
       jobs = [];
     }
 
-    // Limit to 300 jobs
-    jobs = jobs.slice(0, 300);
+    console.log(`[${requestId}] Parsed ${jobs.length} jobs from API response`);
+
+    // Filter out jobs with non-deep links
+    const jobsBeforeFilter = jobs.length;
+    jobs = jobs.filter(job => {
+      if (!job.link) {
+        console.log(`[${requestId}] Rejecting job without link: ${job.title}`);
+        return false;
+      }
+      
+      const isDeep = isDeepLink(job.link);
+      if (!isDeep) {
+        console.log(`[${requestId}] Rejecting non-deep link for ${job.title} at ${job.company}: ${job.link}`);
+      }
+      return isDeep;
+    });
+    console.log(`[${requestId}] After deep link filter: ${jobs.length} jobs (removed ${jobsBeforeFilter - jobs.length})`);
+
+    // Deduplicate jobs
+    const jobsBeforeDedup = jobs.length;
+    jobs = deduplicateJobs(jobs);
+    console.log(`[${requestId}] After deduplication: ${jobs.length} jobs (removed ${jobsBeforeDedup - jobs.length} duplicates)`);
+
+    // Limit to 50 jobs
+    jobs = jobs.slice(0, 50);
+    console.log(`[${requestId}] After limiting to 50: ${jobs.length} jobs`);
+
+    // Add warning if fewer than 10 deep-link jobs
+    let warning = null;
+    if (jobs.length < 10) {
+      warning = `Only ${jobs.length} jobs with valid deep links were found. This may be due to: ` +
+                `(1) Limited job availability for the specified criteria, ` +
+                `(2) AI model was unable to find specific job posting URLs, ` +
+                `(3) Many results were filtered out as generic career pages. ` +
+                `Try broadening your search criteria or searching different locations/specializations.`;
+      console.log(`[${requestId}] WARNING: ${warning}`);
+    }
 
     const duration = Date.now() - startTime;
     console.log(`[${requestId}] END - Returning ${jobs.length} jobs - Duration: ${duration}ms`);
 
-    return res.status(200).json({ 
+    const response = { 
       jobs,
       count: jobs.length,
       query: { profession, specialization, location },
       requestId
-    });
+    };
+    
+    if (warning) {
+      response.warning = warning;
+    }
+
+    return res.status(200).json(response);
 
   } catch (error) {
     const duration = Date.now() - startTime;
