@@ -495,7 +495,7 @@
                     showError(`✅ Backend test successful!\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nStatus: ${data.status}\nAPI Key Configured: ${data.environment?.apiKeyConfigured ? 'Yes' : 'No'}\nNode Version: ${data.environment?.nodeVersion || 'Unknown'}\nRequest ID: ${requestId}\nTimestamp: ${data.timestamp || 'Unknown'}`);
                     const errorDiv = document.getElementById('error');
                     errorDiv.style.background = '#1a1a1a';
-                    errorDiv.style.borderLeftColor = '#4c4';
+                    errorDiv.style.borderLeftColor = '#ffffff';
                 } else {
                     showError(`❌ Backend test failed\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nHTTP Status: ${response.status}\nRequest ID: ${requestId}\nResponse: ${JSON.stringify(data, null, 2)}`);
                 }
