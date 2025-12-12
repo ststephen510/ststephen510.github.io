@@ -335,6 +335,12 @@
             color: #666;
         }
 
+        .warning-message {
+            margin-top: 15px;
+            color: #f39c12;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -404,7 +410,7 @@
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Searching for jobs using AI... This may take a moment.</p>
+            <p>Searching for up to 50 jobs using AI... This may take a moment.</p>
         </div>
 
         <div class="error" id="error">
@@ -583,7 +589,7 @@
                 }
                 
                 const data = await response.json();
-                displayResults(data.jobs);
+                displayResults(data.jobs, data.warning);
                 
             } catch (error) {
                 // Only show error if not already shown
@@ -612,7 +618,7 @@
             }
         }
 
-        function displayResults(jobs) {
+        function displayResults(jobs, warning) {
             const resultsDiv = document.getElementById('results');
             
             if (!jobs || jobs.length === 0) {
@@ -621,20 +627,26 @@
                         <div class="no-results-icon">🔍</div>
                         <h3>No jobs found</h3>
                         <p>Try different search criteria</p>
+                        ${warning ? `<p class="warning-message">⚠️ ${warning}</p>` : ''}
                     </div>
                 `;
                 resultsDiv.classList.add('active');
                 return;
             }
             
-            let html = `<div class="results-header"><div class="results-count">Found ${jobs.length} jobs</div></div><div class="jobs-grid">`;
+            let html = `<div class="results-header">
+                <div class="results-count">Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''}</div>
+                ${warning ? `<p class="warning-message" style="margin-top: 10px;">⚠️ ${warning}</p>` : ''}
+            </div><div class="jobs-grid">`;
             
             jobs.forEach(job => {
                 html += `
                     <div class="job-card">
                         <h3>${escapeHtml(job.title)}</h3>
                         <p class="company">${escapeHtml(job.company)}</p>
+                        ${job.location ? `<p class="description"><strong>📍 ${escapeHtml(job.location)}</strong></p>` : ''}
                         ${job.description ? `<p class="description">${escapeHtml(job.description)}</p>` : ''}
+                        ${job.datePosted ? `<p class="description" style="font-size: 0.9em; color: #999;">Posted: ${escapeHtml(job.datePosted)}</p>` : ''}
                         <a href="${escapeHtml(job.link)}" target="_blank" rel="noopener noreferrer" class="apply-btn">
                             Apply Now →
                         </a>
