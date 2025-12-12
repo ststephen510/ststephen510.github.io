@@ -151,7 +151,7 @@ Return results as a JSON array in this EXACT format:
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: model,
+          model,
           messages: [
             {
               role: 'system',
