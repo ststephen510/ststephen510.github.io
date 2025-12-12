@@ -192,7 +192,7 @@ Return results as a JSON array in this EXACT format:
       if (response.status === 401) {
         hint = 'Invalid API key. Verify XAI_API_KEY in Vercel environment variables';
       } else if (response.status === 403) {
-        hint = 'Access forbidden. Check if your API key has access to the grok-beta model';
+        hint = `Access forbidden. Check if your API key has access to the ${model} model`;
       } else if (response.status === 404) {
         hint = 'Model not found or deprecated. Try setting XAI_MODEL=grok-3 in Vercel environment variables';
       } else if (response.status === 429) {
