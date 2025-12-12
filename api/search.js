@@ -163,6 +163,7 @@ Return results as a JSON array in this EXACT format:
         }),
         signal: controller.signal
       });
+      clearTimeout(timeout);
     } catch (fetchError) {
       clearTimeout(timeout);
       if (fetchError.name === 'AbortError') {
@@ -175,8 +176,6 @@ Return results as a JSON array in this EXACT format:
         });
       }
       throw fetchError;
-    } finally {
-      clearTimeout(timeout);
     }
 
     if (!response.ok) {
