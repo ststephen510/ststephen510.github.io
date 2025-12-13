@@ -38,7 +38,7 @@ app.post('/search', async (req, res) => {
     }
 
     // Extract search parameters from request
-    const { profession, specialization, location } = req.body;
+    const { profession, specialization, location, companies: selectedCompanies } = req.body;
 
     // Validate input parameters
     if (!profession || !specialization || !location) {
@@ -47,27 +47,40 @@ app.post('/search', async (req, res) => {
       });
     }
 
-    console.log(`Search request: ${profession}, ${specialization}, ${location}`);
+    // Validate companies parameter - backward compatible for local dev
+    let companies;
+    if (!selectedCompanies || !Array.isArray(selectedCompanies) || selectedCompanies.length === 0) {
+      console.log('Warning: No companies provided by client - falling back to loading from file for local dev');
+      // Fallback behavior for local development
+      const companiesFilePath = path.join(__dirname, 'companies.txt');
+      
+      if (!fs.existsSync(companiesFilePath)) {
+        return res.status(500).json({ 
+          error: 'companies.txt file not found' 
+        });
+      }
 
-    // Read companies from companies.txt file
-    const companiesFilePath = path.join(__dirname, 'companies.txt');
-    
-    if (!fs.existsSync(companiesFilePath)) {
-      return res.status(500).json({ 
-        error: 'companies.txt file not found' 
-      });
+      const companiesData = fs.readFileSync(companiesFilePath, 'utf-8');
+      
+      // Parse comma-separated companies and take up to 3 for compatibility
+      companies = companiesData
+        .split(',')
+        .map(company => company.trim())
+        .filter(company => company.length > 0)
+        .slice(0, 3);
+      
+      console.log(`Loaded ${companies.length} companies from companies.txt (fallback for local dev)`);
+    } else {
+      if (selectedCompanies.length > 3) {
+        return res.status(400).json({ 
+          error: 'Too many companies selected. Please select a maximum of 3 companies' 
+        });
+      }
+      companies = selectedCompanies.map(c => c.trim()).filter(c => c.length > 0);
+      console.log(`Using ${companies.length} companies from client: ${companies.join(', ')}`);
     }
 
-    const companiesData = fs.readFileSync(companiesFilePath, 'utf-8');
-    
-    // Parse comma-separated companies and take up to 1000
-    const companies = companiesData
-      .split(',')
-      .map(company => company.trim())
-      .filter(company => company.length > 0)
-      .slice(0, 1000);
-
-    console.log(`Loaded ${companies.length} companies from companies.txt`);
+    console.log(`Search request: ${profession}, ${specialization}, ${location}`);
 
     // Construct the prompt for xAI Grok API
     const prompt = `You are a job search assistant specializing in European chemical engineering companies. 
