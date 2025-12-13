@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>European Chemical Engineering Jobs</title>
+    <title>European Chemical Engineering Jobs (BETA)</title>
     <style>
         * {
             margin: 0;
@@ -355,6 +355,146 @@
             color: #999999;
         }
 
+        /* Company selection styles */
+        .company-selector {
+            margin-bottom: 20px;
+        }
+
+        .company-filter {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            font-size: 16px;
+            background: #0a0a0a;
+            color: #ffffff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            margin-bottom: 10px;
+        }
+
+        .company-filter:focus {
+            outline: 2px solid #ffffff;
+            outline-offset: 2px;
+            border-color: #666666;
+        }
+
+        .company-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            background: #0a0a0a;
+            padding: 10px;
+        }
+
+        .company-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .company-list::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .company-list::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 4px;
+        }
+
+        .company-list::-webkit-scrollbar-thumb:hover {
+            background: #666666;
+        }
+
+        .company-item {
+            padding: 10px 12px;
+            margin: 4px 0;
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #cccccc;
+            font-size: 14px;
+        }
+
+        .company-item:hover {
+            background: #252525;
+            border-color: #666666;
+            color: #ffffff;
+        }
+
+        .company-item.selected {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            font-weight: 600;
+        }
+
+        .company-item.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .company-item.disabled:hover {
+            background: #1a1a1a;
+            border-color: #333333;
+            color: #cccccc;
+        }
+
+        .selection-info {
+            margin-top: 10px;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            color: #cccccc;
+            font-size: 14px;
+        }
+
+        .selection-info strong {
+            color: #ffffff;
+        }
+
+        .selection-error {
+            color: #ff6666;
+            font-weight: 600;
+        }
+
+        .selected-companies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .selected-company-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #ffffff;
+            color: #000000;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .selected-company-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .selected-company-tag .remove:hover {
+            color: #666666;
+        }
+
+        .loading-companies {
+            text-align: center;
+            padding: 20px;
+            color: #cccccc;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -373,7 +513,7 @@
 <body>
     <div class="container">
         <header>
-            <h1> European Chemical Engineering Jobs</h1>
+            <h1>European Chemical Engineering Jobs (BETA)</h1>
             <p class="subtitle">Find your next job at leading European companies</p>
         </header>
 
@@ -412,6 +552,31 @@
                     >
                 </div>
 
+                <div class="form-group">
+                    <label for="companyFilter">Select Companies (1-3 required)</label>
+                    <div class="company-selector">
+                        <input 
+                            type="text" 
+                            id="companyFilter" 
+                            class="company-filter"
+                            placeholder="Type to filter companies..."
+                        >
+                        <div id="companyListContainer" class="loading-companies">
+                            Loading companies...
+                        </div>
+                        <div class="selection-info">
+                            <div id="selectionCount">
+                                Selected: <strong>0/3</strong> companies
+                            </div>
+                            <div class="selected-companies" id="selectedCompanies"></div>
+                            <div id="selectionError" class="selection-error" style="display: none; margin-top: 8px;"></div>
+                        </div>
+                    </div>
+                    <p style="color: #999999; font-size: 13px; margin-top: 8px;">
+                        ⚠️ Only jobs for the selected companies will be searched
+                    </p>
+                </div>
+
                 <button type="submit" class="search-button" id="searchButton">
                     Search for Jobs
                 </button>
@@ -445,6 +610,133 @@
         // TODO: After deploying to Vercel, replace with your actual Vercel URL
         // Example: https://ststephen510-github-io.vercel.app
         const BACKEND_URL = 'https://ststephen510-github-io.vercel.app';
+
+        // Global state for companies
+        let allCompanies = [];
+        let selectedCompanies = [];
+        const MAX_COMPANIES = 3;
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load companies on page load
+        async function loadCompanies() {
+            try {
+                const response = await fetch('./public/companies.txt');
+                const text = await response.text();
+                allCompanies = text.split(',')
+                    .map(c => c.trim())
+                    .filter(c => c.length > 0)
+                    .sort();
+                
+                renderCompanyList();
+            } catch (error) {
+                console.error('Error loading companies:', error);
+                document.getElementById('companyListContainer').innerHTML = 
+                    '<div style="color: #ff6666;">Failed to load companies. Please refresh the page.</div>';
+            }
+        }
+
+        // Render company list
+        function renderCompanyList(filter = '') {
+            const container = document.getElementById('companyListContainer');
+            const filterLower = filter.toLowerCase();
+            
+            const filteredCompanies = allCompanies.filter(c => 
+                c.toLowerCase().includes(filterLower)
+            );
+
+            if (filteredCompanies.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999999;">No companies found</div>';
+                return;
+            }
+
+            const listHtml = filteredCompanies.map(company => {
+                const isSelected = selectedCompanies.includes(company);
+                const isDisabled = !isSelected && selectedCompanies.length >= MAX_COMPANIES;
+                const classes = ['company-item'];
+                if (isSelected) classes.push('selected');
+                if (isDisabled) classes.push('disabled');
+                
+                return `<div class="${classes.join(' ')}" data-company="${escapeHtml(company)}">${escapeHtml(company)}</div>`;
+            }).join('');
+
+            container.innerHTML = `<div class="company-list">${listHtml}</div>`;
+            
+            // Add event listeners to company items
+            container.querySelectorAll('.company-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const company = item.getAttribute('data-company');
+                    toggleCompany(company);
+                });
+            });
+        }
+
+        // Toggle company selection
+        function toggleCompany(company) {
+            const index = selectedCompanies.indexOf(company);
+            
+            if (index > -1) {
+                // Deselect
+                selectedCompanies.splice(index, 1);
+            } else {
+                // Select if under limit
+                if (selectedCompanies.length < MAX_COMPANIES) {
+                    selectedCompanies.push(company);
+                } else {
+                    return; // Don't select if at max
+                }
+            }
+            
+            updateSelectionUI();
+            renderCompanyList(document.getElementById('companyFilter').value);
+        }
+
+        // Update selection UI
+        function updateSelectionUI() {
+            const countElement = document.getElementById('selectionCount');
+            const tagsContainer = document.getElementById('selectedCompanies');
+            const errorElement = document.getElementById('selectionError');
+            
+            countElement.innerHTML = `Selected: <strong>${selectedCompanies.length}/${MAX_COMPANIES}</strong> companies`;
+            
+            if (selectedCompanies.length === 0) {
+                tagsContainer.innerHTML = '';
+                errorElement.style.display = 'none';
+            } else {
+                const tagsHtml = selectedCompanies.map(company => 
+                    `<div class="selected-company-tag" data-company="${escapeHtml(company)}">
+                        ${escapeHtml(company)}
+                        <span class="remove">×</span>
+                    </div>`
+                ).join('');
+                tagsContainer.innerHTML = tagsHtml;
+                
+                // Add event listeners to remove buttons
+                tagsContainer.querySelectorAll('.selected-company-tag').forEach(tag => {
+                    tag.querySelector('.remove').addEventListener('click', () => {
+                        const company = tag.getAttribute('data-company');
+                        toggleCompany(company);
+                    });
+                });
+                
+                errorElement.style.display = 'none';
+            }
+        }
+
+        // Filter companies as user types
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCompanies();
+            
+            const filterInput = document.getElementById('companyFilter');
+            filterInput.addEventListener('input', (e) => {
+                renderCompanyList(e.target.value);
+            });
+        });
 
         // Generate a random request ID
         function generateRequestId() {
@@ -544,6 +836,22 @@
                 showError('Please fill in all fields');
                 return;
             }
+
+            // Validate company selection
+            const errorElement = document.getElementById('selectionError');
+            if (selectedCompanies.length === 0) {
+                errorElement.textContent = '⚠️ Please select at least 1 company';
+                errorElement.style.display = 'block';
+                return;
+            }
+            
+            if (selectedCompanies.length > MAX_COMPANIES) {
+                errorElement.textContent = `⚠️ Please select a maximum of ${MAX_COMPANIES} companies`;
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            errorElement.style.display = 'none';
             
             showLoading(true);
             clearResults();
@@ -559,7 +867,12 @@
                         'Content-Type': 'application/json',
                         'X-Request-Id': requestId
                     },
-                    body: JSON.stringify({ profession, specialization, location })
+                    body: JSON.stringify({ 
+                        profession, 
+                        specialization, 
+                        location,
+                        companies: selectedCompanies 
+                    })
                 });
                 
                 let errorData;
@@ -666,12 +979,6 @@
             html += '</div>';
             resultsDiv.innerHTML = html;
             resultsDiv.classList.add('active');
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
 
         function showLoading(show) {

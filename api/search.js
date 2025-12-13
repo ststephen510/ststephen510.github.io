@@ -66,7 +66,7 @@ module.exports = async (req, res) => {
     const model = process.env.XAI_MODEL || 'grok-4-1-fast-reasoning';
 
     // Validate request body
-    const { profession, specialization, location } = req.body;
+    const { profession, specialization, location, companies: selectedCompanies } = req.body;
     if (!profession || !specialization || !location) {
       console.log(`[${requestId}] ERROR: Missing required fields`);
       return res.status(400).json({ 
@@ -77,32 +77,31 @@ module.exports = async (req, res) => {
       });
     }
 
-    console.log(`[${requestId}] Searching for: ${profession} - ${specialization} - ${location}`);
-
-    // Read companies from file with improved path resolution
-    let companies = [];
-    try {
-      // Try __dirname-based path first (more reliable in Vercel), fallback to process.cwd()
-      let companiesPath = path.join(__dirname, '..', 'companies.txt');
-      let pathUsed = '__dirname-based';
-      
-      if (!fs.existsSync(companiesPath)) {
-        companiesPath = path.join(process.cwd(), 'companies.txt');
-        pathUsed = 'process.cwd()-based';
-      }
-      
-      console.log(`[${requestId}] Reading companies from: ${companiesPath} (${pathUsed})`);
-      const companiesText = fs.readFileSync(companiesPath, 'utf-8');
-      companies = companiesText.split(',').map(c => c.trim()).filter(c => c.length > 0).slice(0, 5);
-      console.log(`[${requestId}] Loaded ${companies.length} companies`);
-    } catch (fileError) {
-      console.error(`[${requestId}] ERROR reading companies.txt:`, fileError.message);
-      return res.status(500).json({ 
-        error: 'Failed to load companies database',
-        details: fileError.message,
+    // Validate companies parameter
+    if (!selectedCompanies || !Array.isArray(selectedCompanies) || selectedCompanies.length === 0) {
+      console.log(`[${requestId}] ERROR: Missing or empty companies parameter`);
+      return res.status(400).json({ 
+        error: 'Missing companies selection',
+        hint: 'Please select 1-3 companies to search',
         requestId
       });
     }
+
+    if (selectedCompanies.length > 3) {
+      console.log(`[${requestId}] ERROR: Too many companies selected - ${selectedCompanies.length}`);
+      return res.status(400).json({ 
+        error: 'Too many companies selected',
+        hint: 'Please select a maximum of 3 companies',
+        received: selectedCompanies.length,
+        requestId
+      });
+    }
+
+    console.log(`[${requestId}] Searching for: ${profession} - ${specialization} - ${location}`);
+    console.log(`[${requestId}] Selected companies: ${selectedCompanies.join(', ')}`);
+
+    // Use the selected companies from the client
+    const companies = selectedCompanies.map(c => c.trim()).filter(c => c.length > 0);
 
     // Construct prompt for xAI Grok API
 const prompt = `You are a precise job search assistant. Find current, real job openings that closely match:
@@ -111,17 +110,19 @@ Criteria:
 - Profession: ${profession}
 - Specialization: ${specialization}
 - Location: ${location}
-- Companies (search ONLY their official career pages): ${companies.join(', ')}
+- Companies to search (ONLY these ${companies.length} companies): ${companies.join(', ')}
 
-Rules:
+STRICT Rules:
 
-If you cannot find at least 1 real, current openings that you are 99% sure exist right now, return an empty array — never guess.
+1. Search ONLY the official career pages of the ${companies.length} companies listed above.
+2. NEVER invent, guess, or hallucinate job postings or URLs.
+3. Only return jobs that you are 99% sure exist right now with valid, live URLs.
+4. Use your up-to-date knowledge and search capability to find the official career pages.
+5. Look for jobs that match at least 70% of the criteria (in German OR English).
+6. Prefer direct links from the company's own website (greenhouse, lever, workday, sap, etc.).
+7. Return maximum 10 jobs, ranked by relevance.
 
-1. Use your up-to-date knowledge and search capability to find the official career pages.
-2. Look for jobs that match at least 70% of the criteria (in German OR English).
-3. Prefer direct links from the company’s own website (greenhouse, lever, workday, sap, etc.).
-4. NEVER invent or hallucinate URLs. If you are not 100% sure a job is live right now, skip it.
-5. Return maximum 10 jobs, ranked by relevance.
+If you cannot find at least 1 real, current opening that you are 99% sure exists right now, return an empty jobs array.
 
 Output ONLY valid, verified jobs. If none found, return empty jobs array.
 
