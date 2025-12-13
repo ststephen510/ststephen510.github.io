@@ -616,10 +616,17 @@
         let selectedCompanies = [];
         const MAX_COMPANIES = 3;
 
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Load companies on page load
         async function loadCompanies() {
             try {
-                const response = await fetch('public/companies.txt');
+                const response = await fetch('./public/companies.txt');
                 const text = await response.text();
                 allCompanies = text.split(',')
                     .map(c => c.trim())
@@ -955,12 +962,6 @@
             html += '</div>';
             resultsDiv.innerHTML = html;
             resultsDiv.classList.add('active');
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
 
         function showLoading(show) {
