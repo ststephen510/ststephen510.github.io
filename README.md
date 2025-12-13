@@ -1,6 +1,8 @@
-# European Chemical Engineering Jobs
+# European Chemical Engineering Jobs (BETA)
 
 An AI-powered job search platform that helps you discover career opportunities at leading European chemical engineering companies using the xAI Grok API with web search capabilities.
+
+**NEW:** Now with company-selection-driven search! Select 1-3 specific companies to search for targeted job opportunities.
 
 ## 🏗️ Architecture
 
@@ -36,12 +38,13 @@ Quick summary:
 
 ## Features
 
-- 🔬 **180 European Companies**: Searches across major chemical engineering companies, research institutes, and industry leaders
-- 🤖 **AI-Powered Search**: Uses xAI's Grok API with web search to find real, current job openings
-- 🎯 **Smart Ranking**: Jobs ranked by relevance (perfect fits first, then likely fits)
-- 🌍 **Location Flexible**: Search by specific cities, countries, or remote positions
-- ⚡ **Real-time Results**: Fast job discovery with up to 300 matching positions
+- 🔬 **180 European Companies**: Interactive list of major chemical engineering companies, research institutes, and industry leaders
+- 🎯 **Company Selection**: Select 1-3 specific companies for targeted job search
+- 🤖 **AI-Powered Search**: Uses xAI's Grok API with web search to find real, current job openings at your selected companies
+- 🔍 **Smart Filtering**: Filter company list with real-time search
+- ⚡ **Focused Results**: Search only the official career pages of your selected companies
 - 🎨 **Clean Interface**: Simple, professional design with responsive layout
+- ✅ **Strict Validation**: Only verified, current job postings with valid URLs
 
 ## Tech Stack
 
@@ -57,8 +60,10 @@ Quick summary:
 ├── api/
 │   └── search.js              # Vercel serverless function (backend)
 ├── docs/
-│   └── index.html             # Frontend for GitHub Pages
-├── companies.txt              # List of 180 European companies
+│   ├── index.html             # Frontend for GitHub Pages
+│   └── public/
+│       └── companies.txt      # List of 180 European companies (client-side)
+├── companies.txt              # List of 180 European companies (backend)
 ├── app.js                     # FOR LOCAL DEVELOPMENT ONLY
 ├── package.json               # Backend dependencies (serverless)
 ├── vercel.json                # Vercel configuration
@@ -131,27 +136,31 @@ If you want to test the application locally before deploying:
 
 ### Frontend (docs/index.html) - GitHub Pages
 
-1. **User Input**: Collects profession, specialization, and location
-2. **Submit Request**: Sends POST request to Vercel backend at `/api/search`
-3. **Display Loading**: Shows loading spinner during API call
-4. **Render Results**: Dynamically creates job cards with:
+1. **Load Companies**: Fetches the list of ~180 companies from `public/companies.txt`
+2. **User Input**: Collects profession, specialization, and location
+3. **Company Selection**: Interactive list allowing users to select 1-3 companies
+4. **Validation**: Ensures 1-3 companies are selected before submission
+5. **Submit Request**: Sends POST request to Vercel backend at `/api/search` with selected companies
+6. **Display Loading**: Shows loading spinner during API call
+7. **Render Results**: Dynamically creates job cards with:
    - Job title
    - Company name
    - Direct link to job posting
-5. **Error Handling**: Displays user-friendly error messages
+8. **Error Handling**: Displays user-friendly error messages
 
 ## API Endpoints
 
 ### POST `/api/search`
 
-Search for jobs matching criteria (Vercel serverless function).
+Search for jobs matching criteria at selected companies (Vercel serverless function).
 
 **Request Body**:
 ```json
 {
   "profession": "Chemical Engineer",
   "specialization": "Process Engineering",
-  "location": "Germany"
+  "location": "Germany",
+  "companies": ["BASF SE", "Covestro AG", "Evonik Industries"]
 }
 ```
 
@@ -162,23 +171,25 @@ Search for jobs matching criteria (Vercel serverless function).
     {
       "title": "Process Engineer",
       "company": "BASF SE",
+      "location": "Ludwigshafen",
       "link": "https://basf.com/careers/job/12345"
     }
   ],
-  "count": 150
+  "count": 10
 }
 ```
 
 **Error Response**:
 ```json
 {
-  "error": "Error message description"
+  "error": "Missing companies selection",
+  "hint": "Please select 1-3 companies to search"
 }
 ```
 
 ## Company Database
 
-The application searches for jobs at 180 European companies including:
+The application provides an interactive list of ~180 European companies including:
 
 - **Chemical Manufacturers**: BASF, Covestro, Evonik, Solvay, etc.
 - **Specialty Chemicals**: Clariant, Arkema, Wacker Chemie, etc.
@@ -187,17 +198,16 @@ The application searches for jobs at 180 European companies including:
 - **Aerospace & Defense**: Airbus, MTU Aero Engines, Safran, etc.
 - **Automotive Suppliers**: Continental, Bosch, ZF Friedrichshafen, etc.
 
-See `companies.txt` for the complete list.
+See `companies.txt` for the complete list. Users select 1-3 companies from this list to focus their search.
 
-## Job Ranking Logic
+## Search Behavior
 
-Jobs are ranked by relevance:
+The application searches **only** the selected companies:
 
-1. **Perfect Fits**: Exact match of profession, specialization, and location
-2. **Likely Fits**: Strong match on profession and either specialization or location  
-3. **Possible Fits**: Matches profession with related specialization or nearby location
-
-The xAI Grok API handles the intelligent ranking using its advanced language understanding.
+1. **Company Selection**: Users must select 1-3 companies from the interactive list
+2. **Focused Search**: The AI searches only the official career pages of the selected companies
+3. **Strict Validation**: Only real, current, verifiable job postings are returned (no guessing or inventing)
+4. **Smart Ranking**: Jobs ranked by relevance to the search criteria (up to 10 jobs maximum)
 
 ## Customization
 
