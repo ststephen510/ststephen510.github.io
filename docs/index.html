@@ -662,10 +662,18 @@
                 if (isSelected) classes.push('selected');
                 if (isDisabled) classes.push('disabled');
                 
-                return `<div class="${classes.join(' ')}" onclick="toggleCompany('${escapeHtml(company)}')">${escapeHtml(company)}</div>`;
+                return `<div class="${classes.join(' ')}" data-company="${escapeHtml(company)}">${escapeHtml(company)}</div>`;
             }).join('');
 
             container.innerHTML = `<div class="company-list">${listHtml}</div>`;
+            
+            // Add event listeners to company items
+            container.querySelectorAll('.company-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const company = item.getAttribute('data-company');
+                    toggleCompany(company);
+                });
+            });
         }
 
         // Toggle company selection
@@ -701,12 +709,21 @@
                 errorElement.style.display = 'none';
             } else {
                 const tagsHtml = selectedCompanies.map(company => 
-                    `<div class="selected-company-tag">
+                    `<div class="selected-company-tag" data-company="${escapeHtml(company)}">
                         ${escapeHtml(company)}
-                        <span class="remove" onclick="toggleCompany('${escapeHtml(company)}')">×</span>
+                        <span class="remove">×</span>
                     </div>`
                 ).join('');
                 tagsContainer.innerHTML = tagsHtml;
+                
+                // Add event listeners to remove buttons
+                tagsContainer.querySelectorAll('.selected-company-tag').forEach(tag => {
+                    tag.querySelector('.remove').addEventListener('click', () => {
+                        const company = tag.getAttribute('data-company');
+                        toggleCompany(company);
+                    });
+                });
+                
                 errorElement.style.display = 'none';
             }
         }
