@@ -459,6 +459,130 @@
             font-weight: 600;
         }
 
+        /* Debug panel styles */
+        .debug-panel {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .debug-title {
+            color: #ffffff;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .debug-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #cccccc;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .debug-toggle:hover {
+            color: #ffffff;
+        }
+
+        .debug-toggle input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .debug-content {
+            display: none;
+        }
+
+        .debug-content.visible {
+            display: block;
+        }
+
+        .debug-metadata {
+            background: #0a0a0a;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #cccccc;
+        }
+
+        .debug-metadata-row {
+            display: flex;
+            margin-bottom: 6px;
+        }
+
+        .debug-metadata-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .debug-metadata-label {
+            font-weight: 600;
+            color: #999999;
+            min-width: 120px;
+        }
+
+        .debug-metadata-value {
+            color: #ffffff;
+            word-break: break-all;
+        }
+
+        .debug-json {
+            background: #0a0a0a;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .debug-json::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .debug-json::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .debug-json::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 4px;
+        }
+
+        .debug-json::-webkit-scrollbar-thumb:hover {
+            background: #666666;
+        }
+
+        .debug-json pre {
+            margin: 0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            color: #cccccc;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .debug-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999999;
+        }
+
         .selected-companies {
             display: flex;
             flex-wrap: wrap;
@@ -652,6 +776,28 @@
             </div>
         </div>
 
+        <!-- Debug Panel -->
+        <div class="debug-panel" id="debugPanel" style="display: none;">
+            <div class="debug-header">
+                <div class="debug-title">🐛 API Response Debug Panel</div>
+                <label class="debug-toggle">
+                    <input type="checkbox" id="debugModeCheckbox" onchange="toggleDebugMode()">
+                    <span>Enable Debug Mode</span>
+                </label>
+            </div>
+            <div class="debug-content" id="debugContent">
+                <div class="debug-empty" id="debugEmpty">
+                    No API response yet. Make a search to see the raw response.
+                </div>
+                <div id="debugData" style="display: none;">
+                    <div class="debug-metadata" id="debugMetadata"></div>
+                    <div class="debug-json" id="debugJson">
+                        <pre id="debugJsonContent"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="results" id="results"></div>
     </div>
 
@@ -664,6 +810,11 @@
         let allCompanies = [];
         let selectedCompanies = [];
         const MAX_COMPANIES = 3;
+
+        // Debug mode state
+        let debugModeEnabled = false;
+        let lastApiResponse = null;
+        let lastApiMetadata = null;
 
         // Helper function to escape HTML
         function escapeHtml(text) {
@@ -785,11 +936,90 @@
             filterInput.addEventListener('input', (e) => {
                 renderCompanyList(e.target.value);
             });
+
+            // Load debug mode preference from localStorage
+            const savedDebugMode = localStorage.getItem('debugMode') === 'true';
+            debugModeEnabled = savedDebugMode;
+            document.getElementById('debugModeCheckbox').checked = savedDebugMode;
+            if (savedDebugMode) {
+                showDebugPanel();
+            }
         });
 
         // Generate a random request ID
         function generateRequestId() {
             return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+
+        // Debug mode functions
+        function toggleDebugMode() {
+            debugModeEnabled = document.getElementById('debugModeCheckbox').checked;
+            localStorage.setItem('debugMode', debugModeEnabled.toString());
+            
+            if (debugModeEnabled) {
+                showDebugPanel();
+            } else {
+                hideDebugPanel();
+            }
+        }
+
+        function showDebugPanel() {
+            const panel = document.getElementById('debugPanel');
+            const content = document.getElementById('debugContent');
+            panel.style.display = 'block';
+            content.classList.add('visible');
+        }
+
+        function hideDebugPanel() {
+            const panel = document.getElementById('debugPanel');
+            panel.style.display = 'none';
+        }
+
+        function updateDebugPanel(response, metadata) {
+            if (!debugModeEnabled) {
+                return;
+            }
+
+            lastApiResponse = response;
+            lastApiMetadata = metadata;
+
+            const debugEmpty = document.getElementById('debugEmpty');
+            const debugData = document.getElementById('debugData');
+            const debugMetadata = document.getElementById('debugMetadata');
+            const debugJsonContent = document.getElementById('debugJsonContent');
+
+            // Hide empty state, show data
+            debugEmpty.style.display = 'none';
+            debugData.style.display = 'block';
+
+            // Build metadata HTML
+            let metadataHtml = '';
+            for (const [key, value] of Object.entries(metadata)) {
+                metadataHtml += `
+                    <div class="debug-metadata-row">
+                        <div class="debug-metadata-label">${escapeHtml(key)}:</div>
+                        <div class="debug-metadata-value">${escapeHtml(String(value))}</div>
+                    </div>
+                `;
+            }
+            debugMetadata.innerHTML = metadataHtml;
+
+            // Pretty-print JSON
+            debugJsonContent.textContent = JSON.stringify(response, null, 2);
+        }
+
+        function clearDebugPanel() {
+            if (!debugModeEnabled) {
+                return;
+            }
+
+            const debugEmpty = document.getElementById('debugEmpty');
+            const debugData = document.getElementById('debugData');
+
+            debugEmpty.style.display = 'block';
+            debugData.style.display = 'none';
+            lastApiResponse = null;
+            lastApiMetadata = null;
         }
 
         // Toggle debug information visibility
@@ -833,14 +1063,45 @@
                 }
                 
                 if (response.ok) {
+                    // Update debug panel with health check response
+                    updateDebugPanel(data, {
+                        'Request ID': requestId,
+                        'Backend URL': BACKEND_URL,
+                        'HTTP Status': response.status,
+                        'Endpoint': '/api/health',
+                        'Timestamp': new Date().toISOString()
+                    });
+                    
                     showError(`✅ Backend test successful!\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nStatus: ${data.status}\nAPI Key Configured: ${data.environment?.apiKeyConfigured ? 'Yes' : 'No'}\nNode Version: ${data.environment?.nodeVersion || 'Unknown'}\nRequest ID: ${requestId}\nTimestamp: ${data.timestamp || 'Unknown'}`);
                     const errorDiv = document.getElementById('error');
                     errorDiv.style.background = '#1a1a1a';
                     errorDiv.style.borderLeftColor = '#ffffff';
                 } else {
+                    // Update debug panel with error response
+                    updateDebugPanel(data, {
+                        'Request ID': requestId,
+                        'Backend URL': BACKEND_URL,
+                        'HTTP Status': response.status,
+                        'Endpoint': '/api/health',
+                        'Timestamp': new Date().toISOString()
+                    });
+                    
                     showError(`❌ Backend test failed\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nHTTP Status: ${response.status}\nRequest ID: ${requestId}\nResponse: ${JSON.stringify(data, null, 2)}`);
                 }
             } catch (error) {
+                // Update debug panel with network error
+                updateDebugPanel({
+                    error: error.message,
+                    errorType: error.name,
+                    errorStack: error.stack
+                }, {
+                    'Request ID': 'N/A',
+                    'Backend URL': BACKEND_URL,
+                    'Endpoint': '/api/health',
+                    'Error Type': 'Network Error',
+                    'Timestamp': new Date().toISOString()
+                });
+                
                 // Enhanced error diagnostics for CORS issues
                 let errorMsg = `❌ Backend connection failed\n\nCurrent Origin: ${currentOrigin}\nBACKEND_URL: ${BACKEND_URL}\nError Type: ${error.name}\nError Message: ${error.message}\n\n`;
                 
@@ -937,6 +1198,15 @@
                         };
                     }
                     
+                    // Update debug panel with error response
+                    updateDebugPanel(errorData, {
+                        'Request ID': errorData.requestId || requestId,
+                        'Backend URL': BACKEND_URL,
+                        'HTTP Status': response.status,
+                        'Timestamp': new Date().toISOString(),
+                        'Response Type': 'Error'
+                    });
+                    
                     // Build comprehensive error message
                     const errorMsg = errorData.error || 'Failed to search jobs';
                     const status = errorData.status || response.status;
@@ -966,6 +1236,18 @@
                 }
                 
                 const data = await response.json();
+                
+                // Update debug panel with success response
+                updateDebugPanel(data, {
+                    'Request ID': data.requestId || requestId,
+                    'Backend URL': BACKEND_URL,
+                    'HTTP Status': response.status,
+                    'Timestamp': new Date().toISOString(),
+                    'Response Type': 'Success',
+                    'Jobs Count': data.jobs?.length || 0,
+                    'Citations Count': data.citations?.length || 0
+                });
+                
                 displayResults(data.jobs, data.citations);
                 
             } catch (error) {
@@ -987,6 +1269,18 @@
                     if (error.message.includes('Load failed') || error.name === 'TypeError') {
                         errorMsg = `❌ Request blocked - likely CORS issue\n\nError: ${error.message}\n\n⚠️ Your current origin (${currentOrigin}) may not be in the backend CORS allowlist.\n\nTo fix: Add ${currentOrigin} to allowedOrigins in api/search.js`;
                     }
+                    
+                    // Update debug panel with network error
+                    updateDebugPanel({
+                        error: error.message,
+                        errorType: error.name,
+                        errorStack: error.stack
+                    }, {
+                        'Request ID': requestId,
+                        'Backend URL': BACKEND_URL,
+                        'Error Type': 'Network Error',
+                        'Timestamp': new Date().toISOString()
+                    });
                     
                     showError(errorMsg, debugInfo);
                 }
