@@ -4,6 +4,8 @@ An AI-powered job search platform that helps you discover career opportunities a
 
 **NEW:** Now with company-selection-driven search! Select 1-3 specific companies to search for targeted job opportunities.
 
+**🌟 LATEST:** xAI Live Search integration! The platform now uses real-time web search to reduce hallucinated URLs and provides source citations for transparency.
+
 ## 🏗️ Architecture
 
 This application uses a **split architecture** for optimal deployment:
@@ -41,6 +43,8 @@ Quick summary:
 - 🔬 **180 European Companies**: Interactive list of major chemical engineering companies, research institutes, and industry leaders
 - 🎯 **Company Selection**: Select 1-3 specific companies for targeted job search
 - 🤖 **AI-Powered Search**: Uses xAI's Grok API with web search to find real, current job openings at your selected companies
+- 🌐 **Live Search Integration**: xAI Live Search provides real-time web results and reduces hallucinated URLs
+- 📚 **Source Citations**: View the actual sources used by the AI, displayed as clickable links for verification
 - 🔍 **Smart Filtering**: Filter company list with real-time search
 - ⚡ **Focused Results**: Search only the official career pages of your selected companies
 - 🎨 **Clean Interface**: Simple, professional design with responsive layout
@@ -50,7 +54,7 @@ Quick summary:
 
 - **Frontend**: HTML, CSS, Vanilla JavaScript (static, hosted on GitHub Pages)
 - **Backend**: Node.js serverless functions (hosted on Vercel)
-- **AI**: xAI Grok API (grok-3 model, configurable via XAI_MODEL)
+- **AI**: xAI Grok API with Live Search (grok-4-1-fast-reasoning model, configurable via XAI_MODEL)
 - **Dependencies**: axios (backend only)
 
 ## Project Structure
@@ -105,7 +109,12 @@ If you want to test the application locally before deploying:
    cp .env.example .env
    # Edit .env and add:
    # XAI_API_KEY=your_actual_api_key_here
-   # XAI_MODEL=grok-3 (optional, defaults to grok-3)
+   # XAI_MODEL=grok-4-1-fast-reasoning (optional, defaults to grok-4-1-fast-reasoning)
+   
+   # Optional Live Search configuration:
+   # XAI_SEARCH_MODE=auto (auto|on|off, defaults to auto)
+   # XAI_MAX_SEARCH_RESULTS=10 (defaults to 10)
+   # XAI_RETURN_CITATIONS=true (defaults to true)
    ```
 
 4. **Run the local development server**:
@@ -146,6 +155,7 @@ If you want to test the application locally before deploying:
    - Job title
    - Company name
    - Direct link to job posting
+   - Citations (if Live Search returned sources)
 8. **Error Handling**: Displays user-friendly error messages
 
 ## API Endpoints
@@ -175,7 +185,23 @@ Search for jobs matching criteria at selected companies (Vercel serverless funct
       "link": "https://basf.com/careers/job/12345"
     }
   ],
-  "count": 10
+  "citations": [
+    {
+      "url": "https://basf.com/careers",
+      "title": "BASF Careers"
+    },
+    {
+      "url": "https://covestro.com/jobs",
+      "title": "Covestro Jobs"
+    }
+  ],
+  "count": 10,
+  "query": {
+    "profession": "Chemical Engineer",
+    "specialization": "Process Engineering",
+    "location": "Germany"
+  },
+  "requestId": "abc123xyz456"
 }
 ```
 
@@ -209,6 +235,54 @@ The application searches **only** the selected companies:
 3. **Strict Validation**: Only real, current, verifiable job postings are returned (no guessing or inventing)
 4. **Smart Ranking**: Jobs ranked by relevance to the search criteria (up to 10 jobs maximum)
 
+## Live Search Configuration
+
+The platform integrates xAI's Live Search feature to provide real-time web results and reduce hallucinated job URLs. Live Search can be configured using environment variables:
+
+### Environment Variables
+
+**XAI_SEARCH_MODE** (default: `auto`)
+- `auto`: Automatically decides when to use Live Search based on query
+- `on`: Always use Live Search for every request
+- `off`: Disable Live Search (not recommended for production)
+
+**XAI_MAX_SEARCH_RESULTS** (default: `10`)
+- Number of web search results to use when Live Search is active
+- Range: 1-100 (recommended: 10-20 for balance of quality and speed)
+
+**XAI_RETURN_CITATIONS** (default: `true`)
+- When `true`, the API returns source URLs that were used
+- Citations are displayed in the frontend as clickable links
+- Set to `false` to hide citations (not recommended)
+
+### Example Configuration
+
+```bash
+# .env file
+XAI_API_KEY=your_api_key_here
+XAI_MODEL=grok-4-1-fast-reasoning
+
+# Live Search - recommended production settings
+XAI_SEARCH_MODE=auto
+XAI_MAX_SEARCH_RESULTS=10
+XAI_RETURN_CITATIONS=true
+```
+
+### How It Works
+
+1. **Request**: Backend includes `search_parameters` in xAI API call
+2. **Live Search**: xAI searches the web in real-time for current job postings
+3. **Citations**: API returns URLs of sources that were actually consulted
+4. **Display**: Frontend shows citations below job results for transparency
+5. **Verification**: Users can click citations to verify the AI's sources
+
+### Benefits
+
+- ✅ **Reduced Hallucinations**: Real web results instead of invented URLs
+- ✅ **Current Information**: Up-to-date job postings from company websites
+- ✅ **Transparency**: Citations show exactly what sources were used
+- ✅ **Trust**: Users can verify results by clicking source links
+
 ## Customization
 
 ### Adding More Companies
@@ -231,10 +305,10 @@ PORT=8080
 
 Set the `XAI_MODEL` environment variable in your `.env` file:
 ```
-XAI_MODEL=grok-3
+XAI_MODEL=grok-4-1-fast-reasoning
 ```
 
-If not set, the application defaults to `grok-3`. Check the [xAI documentation](https://docs.x.ai) for available models.
+If not set, the application defaults to `grok-4-1-fast-reasoning`. Check the [xAI documentation](https://docs.x.ai) for available models.
 
 ### Modifying the Search Limit
 
