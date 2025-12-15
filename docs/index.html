@@ -495,6 +495,55 @@
             color: #cccccc;
         }
 
+        /* Citations styles */
+        .citations-section {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .citations-section h3 {
+            color: #ffffff;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .citations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .citation-item {
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .citation-item:hover {
+            background: #252525;
+            border-color: #666666;
+        }
+
+        .citation-item a {
+            color: #ffffff;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .citation-item a:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -917,7 +966,7 @@
                 }
                 
                 const data = await response.json();
-                displayResults(data.jobs);
+                displayResults(data.jobs, data.citations);
                 
             } catch (error) {
                 // Only show error if not already shown
@@ -946,7 +995,7 @@
             }
         }
 
-        function displayResults(jobs) {
+        function displayResults(jobs, citations) {
             const resultsDiv = document.getElementById('results');
             
             if (!jobs || jobs.length === 0) {
@@ -961,7 +1010,46 @@
                 return;
             }
             
-            let html = `<div class="results-header"><div class="results-count">Found ${jobs.length} jobs</div></div><div class="jobs-grid">`;
+            let html = `<div class="results-header"><div class="results-count">Found ${jobs.length} jobs</div></div>`;
+            
+            // Display citations if available
+            if (citations && citations.length > 0) {
+                html += `
+                    <div class="citations-section">
+                        <h3>📚 Sources Used (Live Search)</h3>
+                        <div class="citations-list">
+                `;
+                
+                citations.forEach((citation, index) => {
+                    const url = citation.url || citation.link || citation;
+                    const title = citation.title || `Source ${index + 1}`;
+                    
+                    if (typeof citation === 'string') {
+                        html += `
+                            <div class="citation-item">
+                                <a href="${escapeHtml(citation)}" target="_blank" rel="noopener noreferrer">
+                                    ${escapeHtml(citation)}
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="citation-item">
+                                <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+                                    ${escapeHtml(title)}
+                                </a>
+                            </div>
+                        `;
+                    }
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '<div class="jobs-grid">';
             
             jobs.forEach(job => {
                 html += `
