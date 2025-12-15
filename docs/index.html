@@ -777,12 +777,12 @@
         </div>
 
         <!-- Debug Panel -->
-        <div class="debug-panel" id="debugPanel" style="display: none;">
+        <div class="debug-panel" id="debugPanel">
             <div class="debug-header">
                 <div class="debug-title">🐛 API Response Debug Panel</div>
                 <label class="debug-toggle">
                     <input type="checkbox" id="debugModeCheckbox" onchange="toggleDebugMode()">
-                    <span>Enable Debug Mode</span>
+                    <span>Show raw API response</span>
                 </label>
             </div>
             <div class="debug-content" id="debugContent">
@@ -942,7 +942,7 @@
             debugModeEnabled = savedDebugMode;
             document.getElementById('debugModeCheckbox').checked = savedDebugMode;
             if (savedDebugMode) {
-                showDebugPanel();
+                showDebugContent();
             }
         });
 
@@ -957,22 +957,20 @@
             localStorage.setItem('debugMode', debugModeEnabled.toString());
             
             if (debugModeEnabled) {
-                showDebugPanel();
+                showDebugContent();
             } else {
-                hideDebugPanel();
+                hideDebugContent();
             }
         }
 
-        function showDebugPanel() {
-            const panel = document.getElementById('debugPanel');
+        function showDebugContent() {
             const content = document.getElementById('debugContent');
-            panel.style.display = 'block';
             content.classList.add('visible');
         }
 
-        function hideDebugPanel() {
-            const panel = document.getElementById('debugPanel');
-            panel.style.display = 'none';
+        function hideDebugContent() {
+            const content = document.getElementById('debugContent');
+            content.classList.remove('visible');
         }
 
         function updateDebugPanel(response, metadata) {
