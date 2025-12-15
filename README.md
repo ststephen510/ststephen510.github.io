@@ -229,12 +229,51 @@ See `companies.txt` for the complete list. Users select 1-3 companies from this 
 
 ## Search Behavior
 
-The application searches **only** the selected companies:
+The application searches **only** the selected companies with **strict domain filtering**:
 
 1. **Company Selection**: Users must select 1-3 companies from the interactive list
 2. **Focused Search**: The AI searches only the official career pages of the selected companies
-3. **Strict Validation**: Only real, current, verifiable job postings are returned (no guessing or inventing)
-4. **Smart Ranking**: Jobs ranked by relevance to the search criteria (up to 10 jobs maximum)
+3. **Domain Filtering**: All job links and citations are filtered to allow **ONLY** official company career site URLs
+4. **Strict Validation**: Only real, current, verifiable job postings from company domains are returned
+5. **Smart Ranking**: Jobs ranked by relevance to the search criteria (up to 10 jobs maximum)
+
+### Company Domain Allowlist
+
+The application uses a strict allowlist (`companies.json`) to ensure only official company career sites are returned:
+
+**Allowed Sources:**
+- ✅ Official company domains (e.g., `basf.com`, `careers.basf.com`, `covestro.com`)
+- ✅ Company career subdomains (e.g., `jobs.bosch.com`, `career.siemens-energy.com`)
+
+**Blocked Sources:**
+- ❌ Job aggregators (Indeed, Glassdoor, LinkedIn, Monster, StepStone, etc.)
+- ❌ Social media (Reddit, X/Twitter, Facebook, etc.)
+- ❌ ATS vendor domains (myworkdayjobs.com, greenhouse.io, lever.co - unless on company subdomain)
+- ❌ Blogs, forums, unofficial sites (selectyouruniversity.com, etc.)
+
+**Adding New Companies to the Allowlist:**
+
+To add domain mappings for a new company, edit `companies.json`:
+
+```json
+{
+  "name": "Company Name",
+  "domains": ["company.com", "careers.company.com", "jobs.company.com"],
+  "careerPaths": ["/careers", "/jobs"]
+}
+```
+
+Then deploy the updated file to Vercel. See [DEPLOYMENT.md](DEPLOYMENT.md) for details.
+
+**Behavior When Company Not in Allowlist:**
+- If selected companies have no domain allowlist entries, a warning message is returned
+- Jobs and citations are filtered to empty arrays
+- User is informed to contact support to add the company
+
+This defense-in-depth approach combines:
+1. **Prompt engineering** - Explicit instructions to xAI to use only official sites
+2. **Server-side filtering** - Backend validates all URLs against allowlist
+3. **Blocked domain list** - Known bad actors are explicitly rejected
 
 ## Live Search Configuration
 

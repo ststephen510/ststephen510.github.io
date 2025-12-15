@@ -502,6 +502,64 @@ vercel dev
 - `XAI_RETURN_CITATIONS` (optional): Return source citations - `true` or `false` (defaults to `true`)
 - `XAI_DEBUG_RESPONSE` (optional): Enable diagnostic response logging - `true` or `false` (defaults to `false`)
 
+### Adding Companies to the Domain Allowlist
+
+The application uses `companies.json` to filter job links and citations to only official company career sites.
+
+**To add a new company:**
+
+1. Edit `companies.json` in the repository root
+2. Add a new entry with the company's official domains:
+   ```json
+   {
+     "name": "Company Name",
+     "domains": ["company.com", "careers.company.com", "jobs.company.de"],
+     "careerPaths": ["/careers", "/jobs", "/karriere"]
+   }
+   ```
+
+3. **Field descriptions:**
+   - `name`: Company display name (must match exactly what's in `companies.txt`)
+   - `domains`: Array of allowed hostname suffixes (e.g., `["basf.com"]` allows `basf.com`, `jobs.basf.com`, `careers.basf.com`)
+   - `careerPaths`: (Optional) Common career page paths for reference
+
+4. Commit and push:
+   ```bash
+   git add companies.json
+   git commit -m "Add domain allowlist for Company Name"
+   git push origin main
+   ```
+
+5. Vercel will automatically redeploy with the updated allowlist
+
+**Important Notes:**
+- Only include the company's **own domains** (e.g., `basf.com`, not `myworkdayjobs.com`)
+- ATS vendor domains (Workday, Greenhouse, Lever) are blocked unless they are subdomains of the company domain
+- Job boards (Indeed, LinkedIn, etc.) are always blocked
+- Social media sites (Reddit, X/Twitter, etc.) are always blocked
+
+**Example entries:**
+```json
+[
+  {
+    "name": "BASF SE",
+    "domains": ["basf.com", "jobs.basf.com", "career.basf.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Siemens Energy",
+    "domains": ["siemens-energy.com", "jobs.siemens-energy.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  }
+]
+```
+
+**Testing after adding:**
+1. Select the new company in the frontend
+2. Run a search
+3. Verify that job links are from the company's official domains
+4. Check that non-company URLs are filtered out
+
 ---
 
 ## Monitoring and Logs

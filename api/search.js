@@ -9,6 +9,204 @@ function generateRequestId() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+// Load company allowlist from companies.json
+let companiesAllowlist = null;
+function loadCompaniesAllowlist() {
+  if (companiesAllowlist) {
+    return companiesAllowlist;
+  }
+  
+  try {
+    const companiesJsonPath = path.join(process.cwd(), 'companies.json');
+    const companiesData = fs.readFileSync(companiesJsonPath, 'utf8');
+    companiesAllowlist = JSON.parse(companiesData);
+    return companiesAllowlist;
+  } catch (error) {
+    console.error('Failed to load companies.json:', error.message);
+    return [];
+  }
+}
+
+// Blocked domains - social media, job boards, and aggregators
+const BLOCKED_DOMAINS = [
+  'reddit.com',
+  'x.com',
+  'twitter.com',
+  'facebook.com',
+  'linkedin.com',
+  'instagram.com',
+  'selectyouruniversity.com',
+  'indeed.com',
+  'glassdoor.com',
+  'monster.com',
+  'stepstone.de',
+  'jobware.de',
+  'kimeta.de',
+  'stellenanzeigen.de',
+  'jobs.ch',
+  'jobscout24.ch',
+  'xing.com',
+  'kununu.com',
+  'jobbörse.de',
+  'arbeitsagentur.de',
+  'jobsinnetwork.com',
+  'careerjet.com',
+  'jobrapido.com',
+  'jooble.org',
+  'adzuna.com',
+  'neuvoo.com',
+  'talent.com',
+  'careers24.com',
+  'jobvite.com',
+  // ATS vendor domains (unless on company's own domain)
+  'myworkdayjobs.com',
+  'greenhouse.io',
+  'lever.co',
+  'smartrecruiters.com',
+  'breezy.hr',
+  'recruitee.com',
+  'workable.com',
+  'applytojob.com',
+  'icims.com',
+  'ultipro.com',
+  'successfactors.com',
+  'taleo.net',
+  'taleoportal.com',
+  'jobvite.com'
+];
+
+// Extract hostname from URL, handling various edge cases
+function extractHostname(url) {
+  if (!url || typeof url !== 'string') {
+    return null;
+  }
+  
+  try {
+    // Add protocol if missing
+    let urlToParse = url;
+    if (!/^https?:\/\//i.test(url)) {
+      urlToParse = 'https://' + url;
+    }
+    
+    const urlObj = new URL(urlToParse);
+    return urlObj.hostname.toLowerCase();
+  } catch (error) {
+    // Invalid URL
+    return null;
+  }
+}
+
+// Check if hostname matches allowed domain (supports subdomains)
+function isHostnameAllowed(hostname, allowedDomains) {
+  if (!hostname || !allowedDomains || !Array.isArray(allowedDomains)) {
+    return false;
+  }
+  
+  const normalizedHostname = hostname.toLowerCase();
+  
+  return allowedDomains.some(domain => {
+    const normalizedDomain = domain.toLowerCase();
+    // Exact match or subdomain match
+    return normalizedHostname === normalizedDomain || 
+           normalizedHostname.endsWith('.' + normalizedDomain);
+  });
+}
+
+// Check if hostname is in blocked list
+function isHostnameBlocked(hostname) {
+  if (!hostname) {
+    return true;
+  }
+  
+  const normalizedHostname = hostname.toLowerCase();
+  
+  return BLOCKED_DOMAINS.some(blockedDomain => {
+    return normalizedHostname === blockedDomain || 
+           normalizedHostname.endsWith('.' + blockedDomain);
+  });
+}
+
+// Get allowed domains for selected companies
+function getAllowedDomainsForCompanies(selectedCompanies, allowlist) {
+  const allowedDomains = new Set();
+  const companiesWithoutAllowlist = [];
+  
+  selectedCompanies.forEach(companyName => {
+    const companyEntry = allowlist.find(c => 
+      c.name.toLowerCase() === companyName.toLowerCase()
+    );
+    
+    if (companyEntry && companyEntry.domains) {
+      companyEntry.domains.forEach(domain => allowedDomains.add(domain.toLowerCase()));
+    } else {
+      companiesWithoutAllowlist.push(companyName);
+    }
+  });
+  
+  return {
+    allowedDomains: Array.from(allowedDomains),
+    companiesWithoutAllowlist
+  };
+}
+
+// Filter jobs by allowed domains
+function filterJobs(jobs, allowedDomains) {
+  if (!jobs || !Array.isArray(jobs)) {
+    return [];
+  }
+  
+  return jobs.filter(job => {
+    if (!job || !job.link) {
+      return false;
+    }
+    
+    const hostname = extractHostname(job.link);
+    if (!hostname) {
+      return false; // Invalid URL
+    }
+    
+    // Block known non-company domains
+    if (isHostnameBlocked(hostname)) {
+      return false;
+    }
+    
+    // Allow only if in company allowlist
+    return isHostnameAllowed(hostname, allowedDomains);
+  });
+}
+
+// Filter citations by allowed domains
+function filterCitations(citations, allowedDomains) {
+  if (!citations || !Array.isArray(citations)) {
+    return [];
+  }
+  
+  return citations.filter(citation => {
+    let url;
+    
+    if (typeof citation === 'string') {
+      url = citation;
+    } else if (citation && (citation.url || citation.link)) {
+      url = citation.url || citation.link;
+    } else {
+      return false;
+    }
+    
+    const hostname = extractHostname(url);
+    if (!hostname) {
+      return false; // Invalid URL
+    }
+    
+    // Block known non-company domains
+    if (isHostnameBlocked(hostname)) {
+      return false;
+    }
+    
+    // Allow only if in company allowlist
+    return isHostnameAllowed(hostname, allowedDomains);
+  });
+}
+
 module.exports = async (req, res) => {
   // Request-scoped logging: read or generate requestId
   const requestId = req.headers['x-request-id'] || generateRequestId();
@@ -109,8 +307,17 @@ module.exports = async (req, res) => {
 
     // Use the selected companies from the client
     const companies = selectedCompanies.map(c => c.trim()).filter(c => c.length > 0);
+    
+    // Load company allowlist and get allowed domains
+    const allowlist = loadCompaniesAllowlist();
+    const { allowedDomains, companiesWithoutAllowlist } = getAllowedDomainsForCompanies(companies, allowlist);
+    
+    console.log(`[${requestId}] Allowed domains for selected companies: ${allowedDomains.length > 0 ? allowedDomains.join(', ') : 'none'}`);
+    if (companiesWithoutAllowlist.length > 0) {
+      console.log(`[${requestId}] WARNING: No allowlist entries for: ${companiesWithoutAllowlist.join(', ')}`);
+    }
 
-    // Construct prompt for xAI Grok API
+    // Construct prompt for xAI Grok API with strengthened instructions
 const prompt = `You are a precise job search assistant. Find current, real job openings that closely match:
 
 Criteria:
@@ -119,19 +326,22 @@ Criteria:
 - Location: ${location}
 - Companies to search (ONLY these ${companies.length} companies): ${companies.join(', ')}
 
-STRICT Rules:
+CRITICAL REQUIREMENTS - URLs MUST BE FROM OFFICIAL COMPANY CAREER SITES ONLY:
 
-1. Search ONLY the official career pages of the ${companies.length} companies listed above.
-2. NEVER invent, guess, or hallucinate job postings or URLs.
-3. Only return jobs that you are 99% sure exist right now with valid, live URLs.
-4. Use your up-to-date knowledge and search capability to find the official career pages.
-5. Look for jobs that match at least 70% of the criteria (in German OR English).
-6. Prefer direct links from the company's own website (greenhouse, lever, workday, sap, etc.).
-7. Return maximum 10 jobs, ranked by relevance.
+1. Search ONLY the official company career websites of the ${companies.length} companies listed above.
+2. Use ONLY URLs from the company's own domains (e.g., basf.com, careers.basf.com, covestro.com).
+3. NEVER use job aggregator sites (Indeed, Glassdoor, LinkedIn, Monster, StepStone, etc.).
+4. NEVER use social media sites (Reddit, X/Twitter, Facebook, etc.).
+5. NEVER use ATS vendor domains (myworkdayjobs.com, greenhouse.io, lever.co) unless they are subdomains of the company's official domain.
+6. NEVER use blogs, forums, or unofficial sites (selectyouruniversity.com, etc.).
+7. NEVER invent, guess, or hallucinate job postings or URLs.
+8. Only return jobs that you are 99% sure exist right now with valid, live URLs on the company's official website.
+9. Look for jobs that match at least 70% of the criteria (in German OR English).
+10. Return maximum 10 jobs, ranked by relevance.
 
-If you cannot find at least 1 real, current opening that you are 99% sure exists right now, return an empty jobs array.
+If you cannot find at least 1 real, current opening with an official company career site URL, return an empty jobs array.
 
-Output ONLY valid, verified jobs. If none found, return empty jobs array.
+Output ONLY valid, verified jobs from official company websites. If none found, return empty jobs array.
 
 Final Output (JSON only, no explanations):
 {
@@ -140,7 +350,7 @@ Final Output (JSON only, no explanations):
       "title": "Original job title (German or English)",
       "company": "Exact company name",
       "location": "City/Region from the posting",
-      "link": "Direct application URL"
+      "link": "Direct application URL from company's official website ONLY"
     }
   ]
 }`;
@@ -301,19 +511,55 @@ Final Output (JSON only, no explanations):
       jobs = [];
     }
 
-    // Limit to 10 jobs
+    // Limit to 10 jobs before filtering
     jobs = jobs.slice(0, 10);
+    
+    // Count jobs and citations before filtering
+    const jobsBeforeFilter = jobs.length;
+    const citationsBeforeFilter = citations.length;
+    
+    // Apply domain filtering to jobs and citations
+    let filteredJobs = [];
+    let filteredCitations = [];
+    let warning = null;
+    
+    if (allowedDomains.length === 0) {
+      // No allowlist entries found for selected companies
+      console.log(`[${requestId}] WARNING: No domain allowlist for selected companies, returning empty results`);
+      warning = `No domain allowlist configured for the selected companies: ${companiesWithoutAllowlist.join(', ')}. Please contact support to add these companies to the allowlist.`;
+      filteredJobs = [];
+      filteredCitations = [];
+    } else {
+      // Filter using allowlist
+      filteredJobs = filterJobs(jobs, allowedDomains);
+      filteredCitations = filterCitations(citations, allowedDomains);
+      
+      console.log(`[${requestId}] Filtered jobs: ${jobsBeforeFilter} -> ${filteredJobs.length} (removed ${jobsBeforeFilter - filteredJobs.length})`);
+      console.log(`[${requestId}] Filtered citations: ${citationsBeforeFilter} -> ${filteredCitations.length} (removed ${citationsBeforeFilter - filteredCitations.length})`);
+      
+      // Add warning if filtering removed all results
+      if (filteredJobs.length === 0 && jobsBeforeFilter > 0) {
+        warning = `All ${jobsBeforeFilter} job(s) were filtered out because they were not from official company career sites. Only URLs from company domains are allowed.`;
+      }
+    }
 
     const duration = Date.now() - startTime;
-    console.log(`[${requestId}] END - Returning ${jobs.length} jobs, ${citations.length} citations - Duration: ${duration}ms`);
+    console.log(`[${requestId}] END - Returning ${filteredJobs.length} jobs, ${filteredCitations.length} citations - Duration: ${duration}ms`);
 
-    return res.status(200).json({ 
-      jobs,
-      citations,
-      count: jobs.length,
+    const response = {
+      jobs: filteredJobs,
+      citations: filteredCitations,
+      count: filteredJobs.length,
       query: { profession, specialization, location },
       requestId
-    });
+    };
+    
+    // Add warning if present
+    if (warning) {
+      response.warning = warning;
+    }
+
+    return res.status(200).json(response);
 
   } catch (error) {
     const duration = Date.now() - startTime;
