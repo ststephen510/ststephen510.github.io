@@ -65,6 +65,11 @@ module.exports = async (req, res) => {
     // Get model from environment or use default
     const model = process.env.XAI_MODEL || 'grok-4-1-fast-reasoning';
 
+    // Get Live Search configuration from environment or use defaults
+    const searchMode = process.env.XAI_SEARCH_MODE || 'auto';
+    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '10', 10);
+    const returnCitations = process.env.XAI_RETURN_CITATIONS !== 'false'; // default true
+
     // Validate request body
     const { profession, specialization, location, companies: selectedCompanies } = req.body;
     if (!profession || !specialization || !location) {
@@ -99,6 +104,7 @@ module.exports = async (req, res) => {
 
     console.log(`[${requestId}] Searching for: ${profession} - ${specialization} - ${location}`);
     console.log(`[${requestId}] Selected companies: ${selectedCompanies.join(', ')}`);
+    console.log(`[${requestId}] Live Search config: mode=${searchMode}, max_results=${maxSearchResults}, return_citations=${returnCitations}`);
 
     // Use the selected companies from the client
     const companies = selectedCompanies.map(c => c.trim()).filter(c => c.length > 0);
@@ -147,27 +153,35 @@ Final Output (JSON only, no explanations):
     // Call xAI Grok API using native fetch (available in Node.js 18+)
     let response;
     try {
+      // Construct request body with Live Search parameters
+      const requestBody = {
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a factual, verification-focused assistant. Never invent data. Base responses only on verifiable real-world information. Output strictly valid JSON.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 3000,
+        search_parameters: {
+          mode: searchMode,
+          max_search_results: maxSearchResults,
+          return_citations: returnCitations
+        }
+      };
+
       response = await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${XAI_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a factual, verification-focused assistant. Never invent data. Base responses only on verifiable real-world information. Output strictly valid JSON.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 3000
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal
       });
       clearTimeout(timeout);
@@ -215,6 +229,13 @@ Final Output (JSON only, no explanations):
 
     const apiData = await response.json();
     const grokResponse = apiData.choices?.[0]?.message?.content;
+    
+    // Extract citations if available from Live Search
+    const citations = apiData.choices?.[0]?.message?.citations || [];
+    
+    if (citations.length > 0) {
+      console.log(`[${requestId}] Received ${citations.length} citations from Live Search`);
+    }
 
     if (!grokResponse) {
       console.error(`[${requestId}] No response from xAI API`);
@@ -245,10 +266,11 @@ Final Output (JSON only, no explanations):
     jobs = jobs.slice(0, 10);
 
     const duration = Date.now() - startTime;
-    console.log(`[${requestId}] END - Returning ${jobs.length} jobs - Duration: ${duration}ms`);
+    console.log(`[${requestId}] END - Returning ${jobs.length} jobs, ${citations.length} citations - Duration: ${duration}ms`);
 
     return res.status(200).json({ 
       jobs,
+      citations,
       count: jobs.length,
       query: { profession, specialization, location },
       requestId

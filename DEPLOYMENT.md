@@ -44,7 +44,7 @@ On the project configuration page:
 4. **Output Directory**: Leave empty
 5. **Install Command**: Leave as default (`npm install`)
 
-### Step 4: Add Environment Variable
+### Step 4: Add Environment Variables
 
 This is **critical** for the application to work:
 
@@ -59,7 +59,20 @@ This is **critical** for the application to work:
    
    **Optional (recommended):**
    - **Name**: `XAI_MODEL`
-   - **Value**: `grok-3` (or another model - defaults to `grok-3` if not set)
+   - **Value**: `grok-4-1-fast-reasoning` (or another model - defaults to `grok-4-1-fast-reasoning` if not set)
+   - **Environment**: Select all environments (Production, Preview, Development)
+   
+   **Optional (Live Search Configuration):**
+   - **Name**: `XAI_SEARCH_MODE`
+   - **Value**: `auto` (options: `auto`, `on`, `off` - defaults to `auto` if not set)
+   - **Environment**: Select all environments (Production, Preview, Development)
+   
+   - **Name**: `XAI_MAX_SEARCH_RESULTS`
+   - **Value**: `10` (defaults to `10` if not set, recommended range: 5-20)
+   - **Environment**: Select all environments (Production, Preview, Development)
+   
+   - **Name**: `XAI_RETURN_CITATIONS`
+   - **Value**: `true` (defaults to `true` if not set)
    - **Environment**: Select all environments (Production, Preview, Development)
    
 4. Click the checkmark to save each variable
@@ -72,9 +85,23 @@ This is **critical** for the application to work:
 - Copy the key and paste it as the value
 
 **Note on XAI_MODEL:**
-- The default model is `grok-3`
-- If you don't set this variable, the application will use `grok-3` automatically
+- The default model is `grok-4-1-fast-reasoning`
+- If you don't set this variable, the application will use `grok-4-1-fast-reasoning` automatically
 - Set this if you want to use a different xAI model (check [xAI documentation](https://docs.x.ai) for available models)
+
+**Note on Live Search Configuration:**
+- **XAI_SEARCH_MODE**: Controls when Live Search is used
+  - `auto` (recommended): xAI decides when to use Live Search based on the query
+  - `on`: Always use Live Search for every request (may be slower but more accurate)
+  - `off`: Disable Live Search (not recommended - may result in hallucinated URLs)
+  
+- **XAI_MAX_SEARCH_RESULTS**: Number of web search results to use (1-100)
+  - Default: `10` is a good balance of quality and speed
+  - Higher values may provide more context but slower responses
+  
+- **XAI_RETURN_CITATIONS**: Show source URLs in results
+  - `true` (recommended): Display citations for transparency
+  - `false`: Hide citations (not recommended)
 
 ### Step 5: Deploy
 
@@ -375,6 +402,7 @@ Expected response:
 ```json
 {
   "jobs": [...],
+  "citations": [...],
   "count": 150
 }
 ```
@@ -391,9 +419,12 @@ To run the application locally before deploying:
 # Install all dependencies (including express)
 npm install express dotenv cors
 
-# Create .env file with your API key and model
+# Create .env file with your API key and configuration
 echo "XAI_API_KEY=your_key_here" > .env
-echo "XAI_MODEL=grok-3" >> .env
+echo "XAI_MODEL=grok-4-1-fast-reasoning" >> .env
+echo "XAI_SEARCH_MODE=auto" >> .env
+echo "XAI_MAX_SEARCH_RESULTS=10" >> .env
+echo "XAI_RETURN_CITATIONS=true" >> .env
 
 # Run the server
 node app.js
@@ -450,13 +481,16 @@ vercel dev
 
 1. Go to Vercel Dashboard → Your Project
 2. Click **Settings** → **Environment Variables**
-3. Update the value of `XAI_API_KEY` or `XAI_MODEL`, or add new variables
+3. Update the value of `XAI_API_KEY`, `XAI_MODEL`, or Live Search variables, or add new variables
 4. Go to **Deployments** tab
 5. Click **"Redeploy"** on the latest deployment to apply changes
 
 **Available Environment Variables:**
 - `XAI_API_KEY` (required): Your xAI API key
-- `XAI_MODEL` (optional): The xAI model to use (defaults to `grok-3` if not set)
+- `XAI_MODEL` (optional): The xAI model to use (defaults to `grok-4-1-fast-reasoning` if not set)
+- `XAI_SEARCH_MODE` (optional): Live Search mode - `auto`, `on`, or `off` (defaults to `auto`)
+- `XAI_MAX_SEARCH_RESULTS` (optional): Number of search results to use (defaults to `10`)
+- `XAI_RETURN_CITATIONS` (optional): Return source citations - `true` or `false` (defaults to `true`)
 
 ---
 

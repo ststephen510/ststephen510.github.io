@@ -37,6 +37,11 @@ app.post('/search', async (req, res) => {
       });
     }
 
+    // Get Live Search configuration from environment or use defaults
+    const searchMode = process.env.XAI_SEARCH_MODE || 'auto';
+    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '10', 10);
+    const returnCitations = process.env.XAI_RETURN_CITATIONS !== 'false'; // default true
+
     // Extract search parameters from request
     const { profession, specialization, location, companies: selectedCompanies } = req.body;
 
@@ -81,6 +86,7 @@ app.post('/search', async (req, res) => {
     }
 
     console.log(`Search request: ${profession}, ${specialization}, ${location}`);
+    console.log(`Live Search config: mode=${searchMode}, max_results=${maxSearchResults}, return_citations=${returnCitations}`);
 
     // Construct the prompt for xAI Grok API
     const prompt = `You are a job search assistant specializing in European chemical engineering companies. 
@@ -141,7 +147,12 @@ IMPORTANT:
           }
         ],
         temperature: 0.7,
-        max_tokens: 4000
+        max_tokens: 4000,
+        search_parameters: {
+          mode: searchMode,
+          max_search_results: maxSearchResults,
+          return_citations: returnCitations
+        }
       },
       {
         headers: {
@@ -156,6 +167,13 @@ IMPORTANT:
 
     // Extract the response content
     const grokResponse = apiResponse.data.choices[0].message.content;
+    
+    // Extract citations if available from Live Search
+    const citations = apiResponse.data.choices?.[0]?.message?.citations || [];
+    
+    if (citations.length > 0) {
+      console.log(`Received ${citations.length} citations from Live Search`);
+    }
     
     // Parse the JSON response from Grok
     let jobs = [];
@@ -194,9 +212,10 @@ IMPORTANT:
 
     console.log(`Returning ${validJobs.length} jobs`);
 
-    // Return the jobs to the client
+    // Return the jobs and citations to the client
     res.json({ 
       jobs: validJobs,
+      citations,
       count: validJobs.length
     });
 
