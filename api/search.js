@@ -71,8 +71,7 @@ const BLOCKED_DOMAINS = [
   'ultipro.com',
   'successfactors.com',
   'taleo.net',
-  'taleoportal.com',
-  'jobvite.com'
+  'taleoportal.com'
 ];
 
 // Extract hostname from URL, handling various edge cases
