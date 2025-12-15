@@ -546,7 +546,7 @@ Final Output (JSON only, no explanations):
     const duration = Date.now() - startTime;
     console.log(`[${requestId}] END - Returning ${filteredJobs.length} jobs, ${filteredCitations.length} citations - Duration: ${duration}ms`);
 
-    const response = {
+    const responseData = {
       jobs: filteredJobs,
       citations: filteredCitations,
       count: filteredJobs.length,
@@ -556,10 +556,10 @@ Final Output (JSON only, no explanations):
     
     // Add warning if present
     if (warning) {
-      response.warning = warning;
+      responseData.warning = warning;
     }
 
-    return res.status(200).json(response);
+    return res.status(200).json(responseData);
 
   } catch (error) {
     const duration = Date.now() - startTime;
