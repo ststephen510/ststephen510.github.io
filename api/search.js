@@ -233,8 +233,18 @@ Final Output (JSON only, no explanations):
     // Debug logging when enabled (gated by XAI_DEBUG_RESPONSE env var)
     if (debugResponse) {
       console.log(`[${requestId}] DEBUG: Top-level apiData keys:`, Object.keys(apiData));
-      console.log(`[${requestId}] DEBUG: apiData.choices?.[0] keys:`, apiData.choices?.[0] ? Object.keys(apiData.choices[0]) : 'N/A');
-      console.log(`[${requestId}] DEBUG: apiData.choices?.[0]?.message keys:`, apiData.choices?.[0]?.message ? Object.keys(apiData.choices[0].message) : 'N/A');
+      
+      if (apiData.choices?.[0]) {
+        console.log(`[${requestId}] DEBUG: apiData.choices?.[0] keys:`, Object.keys(apiData.choices[0]));
+      } else {
+        console.log(`[${requestId}] DEBUG: apiData.choices?.[0] keys: N/A`);
+      }
+      
+      if (apiData.choices?.[0]?.message) {
+        console.log(`[${requestId}] DEBUG: apiData.choices?.[0]?.message keys:`, Object.keys(apiData.choices[0].message));
+      } else {
+        console.log(`[${requestId}] DEBUG: apiData.choices?.[0]?.message keys: N/A`);
+      }
       
       if (apiData.usage) {
         console.log(`[${requestId}] DEBUG: apiData.usage:`, apiData.usage);
