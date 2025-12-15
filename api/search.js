@@ -66,9 +66,10 @@ module.exports = async (req, res) => {
     const model = process.env.XAI_MODEL || 'grok-4-1-fast-reasoning';
 
     // Get Live Search configuration from environment or use defaults
-    const searchMode = process.env.XAI_SEARCH_MODE || 'auto';
+    const searchMode = process.env.XAI_SEARCH_MODE || 'on'; // default to 'on' to force Live Search
     const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '10', 10);
     const returnCitations = process.env.XAI_RETURN_CITATIONS !== 'false'; // default true
+    const debugResponse = process.env.XAI_DEBUG_RESPONSE === 'true'; // default false
 
     // Validate request body
     const { profession, specialization, location, companies: selectedCompanies } = req.body;
@@ -228,13 +229,41 @@ Final Output (JSON only, no explanations):
     }
 
     const apiData = await response.json();
+    
+    // Debug logging when enabled (gated by XAI_DEBUG_RESPONSE env var)
+    if (debugResponse) {
+      console.log(`[${requestId}] DEBUG: Top-level apiData keys:`, Object.keys(apiData));
+      console.log(`[${requestId}] DEBUG: apiData.choices?.[0] keys:`, apiData.choices?.[0] ? Object.keys(apiData.choices[0]) : 'N/A');
+      console.log(`[${requestId}] DEBUG: apiData.choices?.[0]?.message keys:`, apiData.choices?.[0]?.message ? Object.keys(apiData.choices[0].message) : 'N/A');
+      
+      if (apiData.usage) {
+        console.log(`[${requestId}] DEBUG: apiData.usage:`, apiData.usage);
+      }
+      
+      // Check potential citation locations
+      console.log(`[${requestId}] DEBUG: apiData.citations:`, apiData.citations || 'N/A');
+      console.log(`[${requestId}] DEBUG: apiData.choices?.[0]?.citations:`, apiData.choices?.[0]?.citations || 'N/A');
+      console.log(`[${requestId}] DEBUG: apiData.choices?.[0]?.message?.citations:`, apiData.choices?.[0]?.message?.citations || 'N/A');
+    }
+    
     const grokResponse = apiData.choices?.[0]?.message?.content;
     
-    // Extract citations if available from Live Search
-    const citations = apiData.choices?.[0]?.message?.citations || [];
+    // Extract citations from multiple possible locations (defensive)
+    let citations = [];
+    
+    // Check all possible citation locations
+    if (apiData.citations && Array.isArray(apiData.citations)) {
+      citations = apiData.citations;
+    } else if (apiData.choices?.[0]?.citations && Array.isArray(apiData.choices[0].citations)) {
+      citations = apiData.choices[0].citations;
+    } else if (apiData.choices?.[0]?.message?.citations && Array.isArray(apiData.choices[0].message.citations)) {
+      citations = apiData.choices[0].message.citations;
+    }
     
     if (citations.length > 0) {
       console.log(`[${requestId}] Received ${citations.length} citations from Live Search`);
+    } else {
+      console.log(`[${requestId}] No citations found in response`);
     }
 
     if (!grokResponse) {

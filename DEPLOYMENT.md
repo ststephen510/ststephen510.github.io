@@ -64,7 +64,7 @@ This is **critical** for the application to work:
    
    **Optional (Live Search Configuration):**
    - **Name**: `XAI_SEARCH_MODE`
-   - **Value**: `auto` (options: `auto`, `on`, `off` - defaults to `auto` if not set)
+   - **Value**: `on` (options: `on`, `auto`, `off` - defaults to `on` if not set)
    - **Environment**: Select all environments (Production, Preview, Development)
    
    - **Name**: `XAI_MAX_SEARCH_RESULTS`
@@ -73,6 +73,10 @@ This is **critical** for the application to work:
    
    - **Name**: `XAI_RETURN_CITATIONS`
    - **Value**: `true` (defaults to `true` if not set)
+   - **Environment**: Select all environments (Production, Preview, Development)
+   
+   - **Name**: `XAI_DEBUG_RESPONSE`
+   - **Value**: `false` (set to `true` to enable diagnostic logging - defaults to `false` if not set)
    - **Environment**: Select all environments (Production, Preview, Development)
    
 4. Click the checkmark to save each variable
@@ -91,8 +95,8 @@ This is **critical** for the application to work:
 
 **Note on Live Search Configuration:**
 - **XAI_SEARCH_MODE**: Controls when Live Search is used
-  - `auto` (recommended): xAI decides when to use Live Search based on the query
-  - `on`: Always use Live Search for every request (may be slower but more accurate)
+  - `on` (default, recommended): Always use Live Search for every request (may be slower but more accurate)
+  - `auto`: xAI decides when to use Live Search based on the query
   - `off`: Disable Live Search (not recommended - may result in hallucinated URLs)
   
 - **XAI_MAX_SEARCH_RESULTS**: Number of web search results to use (1-100)
@@ -102,6 +106,10 @@ This is **critical** for the application to work:
 - **XAI_RETURN_CITATIONS**: Show source URLs in results
   - `true` (recommended): Display citations for transparency
   - `false`: Hide citations (not recommended)
+
+- **XAI_DEBUG_RESPONSE**: Enable diagnostic logging for troubleshooting
+  - `false` (default): Normal operation with standard logs
+  - `true`: Verbose logging of xAI API response structure, useful for debugging citation issues
 
 ### Step 5: Deploy
 
@@ -422,9 +430,10 @@ npm install express dotenv cors
 # Create .env file with your API key and configuration
 echo "XAI_API_KEY=your_key_here" > .env
 echo "XAI_MODEL=grok-4-1-fast-reasoning" >> .env
-echo "XAI_SEARCH_MODE=auto" >> .env
+echo "XAI_SEARCH_MODE=on" >> .env
 echo "XAI_MAX_SEARCH_RESULTS=10" >> .env
 echo "XAI_RETURN_CITATIONS=true" >> .env
+echo "XAI_DEBUG_RESPONSE=false" >> .env
 
 # Run the server
 node app.js
@@ -488,9 +497,10 @@ vercel dev
 **Available Environment Variables:**
 - `XAI_API_KEY` (required): Your xAI API key
 - `XAI_MODEL` (optional): The xAI model to use (defaults to `grok-4-1-fast-reasoning` if not set)
-- `XAI_SEARCH_MODE` (optional): Live Search mode - `auto`, `on`, or `off` (defaults to `auto`)
+- `XAI_SEARCH_MODE` (optional): Live Search mode - `on`, `auto`, or `off` (defaults to `on`)
 - `XAI_MAX_SEARCH_RESULTS` (optional): Number of search results to use (defaults to `10`)
 - `XAI_RETURN_CITATIONS` (optional): Return source citations - `true` or `false` (defaults to `true`)
+- `XAI_DEBUG_RESPONSE` (optional): Enable diagnostic response logging - `true` or `false` (defaults to `false`)
 
 ---
 
