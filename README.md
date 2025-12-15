@@ -112,9 +112,10 @@ If you want to test the application locally before deploying:
    # XAI_MODEL=grok-4-1-fast-reasoning (optional, defaults to grok-4-1-fast-reasoning)
    
    # Optional Live Search configuration:
-   # XAI_SEARCH_MODE=auto (auto|on|off, defaults to auto)
+   # XAI_SEARCH_MODE=on (on|auto|off, defaults to 'on' to force Live Search)
    # XAI_MAX_SEARCH_RESULTS=10 (defaults to 10)
    # XAI_RETURN_CITATIONS=true (defaults to true)
+   # XAI_DEBUG_RESPONSE=false (set to 'true' to enable diagnostic logging)
    ```
 
 4. **Run the local development server**:
@@ -241,9 +242,9 @@ The platform integrates xAI's Live Search feature to provide real-time web resul
 
 ### Environment Variables
 
-**XAI_SEARCH_MODE** (default: `auto`)
+**XAI_SEARCH_MODE** (default: `on`)
+- `on`: Always use Live Search for every request (default, recommended)
 - `auto`: Automatically decides when to use Live Search based on query
-- `on`: Always use Live Search for every request
 - `off`: Disable Live Search (not recommended for production)
 
 **XAI_MAX_SEARCH_RESULTS** (default: `10`)
@@ -255,6 +256,12 @@ The platform integrates xAI's Live Search feature to provide real-time web resul
 - Citations are displayed in the frontend as clickable links
 - Set to `false` to hide citations (not recommended)
 
+**XAI_DEBUG_RESPONSE** (default: `false`)
+- When `true`, enables verbose diagnostic logging of xAI API responses
+- Logs top-level response structure, choice keys, message keys, and potential citation locations
+- Useful for debugging when citations or search results are not appearing as expected
+- Set to `false` in production to reduce log volume
+
 ### Example Configuration
 
 ```bash
@@ -263,9 +270,10 @@ XAI_API_KEY=your_api_key_here
 XAI_MODEL=grok-4-1-fast-reasoning
 
 # Live Search - recommended production settings
-XAI_SEARCH_MODE=auto
+XAI_SEARCH_MODE=on
 XAI_MAX_SEARCH_RESULTS=10
 XAI_RETURN_CITATIONS=true
+XAI_DEBUG_RESPONSE=false
 ```
 
 ### How It Works
