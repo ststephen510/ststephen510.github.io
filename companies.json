@@ -1,0 +1,272 @@
+[
+  {
+    "name": "BASF SE",
+    "domains": ["basf.com", "jobs.basf.com", "career.basf.com", "careers.basf.com"],
+    "careerPaths": ["/careers", "/jobs", "/en/careers"]
+  },
+  {
+    "name": "Covestro AG",
+    "domains": ["covestro.com", "career.covestro.com", "careers.covestro.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Evonik Industries",
+    "domains": ["evonik.com", "career.evonik.com", "careers.evonik.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "SABIC Europe",
+    "domains": ["sabic.com", "careers.sabic.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Solvay",
+    "domains": ["solvay.com", "careers.solvay.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Clariant AG",
+    "domains": ["clariant.com", "careers.clariant.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Arkema",
+    "domains": ["arkema.com", "careers.arkema.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Wacker Chemie",
+    "domains": ["wacker.com", "careers.wacker.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Lanxess AG",
+    "domains": ["lanxess.com", "careers.lanxess.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Bayer AG",
+    "domains": ["bayer.com", "career.bayer.com", "careers.bayer.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Merck KGaA",
+    "domains": ["merckgroup.com", "careers.merckgroup.com", "emdgroup.com", "careers.emdgroup.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Henkel",
+    "domains": ["henkel.com", "careers.henkel.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Air Liquide",
+    "domains": ["airliquide.com", "careers.airliquide.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Linde plc",
+    "domains": ["linde.com", "careers.linde.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "LyondellBasell Industries",
+    "domains": ["lyondellbasell.com", "careers.lyondellbasell.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "INEOS",
+    "domains": ["ineos.com", "careers.ineos.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "AkzoNobel",
+    "domains": ["akzonobel.com", "careers.akzonobel.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "DSM-Firmenich",
+    "domains": ["dsm-firmenich.com", "careers.dsm-firmenich.com", "dsm.com", "careers.dsm.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Syensqo",
+    "domains": ["syensqo.com", "careers.syensqo.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Umicore",
+    "domains": ["umicore.com", "careers.umicore.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Sika AG",
+    "domains": ["sika.com", "careers.sika.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Continental AG",
+    "domains": ["continental.com", "career.continental.com", "careers.continental.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "ZF Friedrichshafen AG",
+    "domains": ["zf.com", "jobs.zf.com", "career.zf.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Robert Bosch GmbH",
+    "domains": ["bosch.com", "career.bosch.com", "careers.bosch.com", "bosch-career.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Airbus",
+    "domains": ["airbus.com", "jobs.airbus.com", "careers.airbus.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "MTU Aero Engines",
+    "domains": ["mtu.de", "jobs.mtu.de", "career.mtu.de"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Safran",
+    "domains": ["safran-group.com", "careers.safran-group.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Thales Group",
+    "domains": ["thalesgroup.com", "careers.thalesgroup.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Siemens Energy",
+    "domains": ["siemens-energy.com", "jobs.siemens-energy.com", "careers.siemens-energy.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Fraunhofer Society",
+    "domains": ["fraunhofer.de", "jobs.fraunhofer.de", "karriere.fraunhofer.de"],
+    "careerPaths": ["/jobs", "/karriere", "/careers"]
+  },
+  {
+    "name": "Fraunhofer ICT",
+    "domains": ["ict.fraunhofer.de"],
+    "careerPaths": ["/jobs", "/karriere", "/careers"]
+  },
+  {
+    "name": "Fraunhofer IGB",
+    "domains": ["igb.fraunhofer.de"],
+    "careerPaths": ["/jobs", "/karriere", "/careers"]
+  },
+  {
+    "name": "Fraunhofer UMSICHT",
+    "domains": ["umsicht.fraunhofer.de"],
+    "careerPaths": ["/jobs", "/karriere", "/careers"]
+  },
+  {
+    "name": "Karlsruhe Institute of Technology",
+    "domains": ["kit.edu", "jobs.kit.edu"],
+    "careerPaths": ["/jobs", "/karriere", "/careers", "/stellenangebote"]
+  },
+  {
+    "name": "German Aerospace Center",
+    "domains": ["dlr.de", "jobs.dlr.de", "karriere.dlr.de"],
+    "careerPaths": ["/jobs", "/karriere", "/careers"]
+  },
+  {
+    "name": "Brenntag SE",
+    "domains": ["brenntag.com", "careers.brenntag.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Shell Chemicals Europe",
+    "domains": ["shell.com", "careers.shell.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "ExxonMobil Chemical Europe",
+    "domains": ["exxonmobil.com", "jobs.exxonmobil.com", "careers.exxonmobil.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Dow Chemical Europe",
+    "domains": ["dow.com", "careers.dow.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "DuPont",
+    "domains": ["dupont.com", "careers.dupont.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Johnson Matthey",
+    "domains": ["matthey.com", "careers.matthey.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Rheinmetall",
+    "domains": ["rheinmetall.com", "karriere.rheinmetall.com"],
+    "careerPaths": ["/careers", "/jobs", "/karriere"]
+  },
+  {
+    "name": "Leonardo S.p.A.",
+    "domains": ["leonardo.com", "jobs.leonardo.com", "careers.leonardo.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Dassault Aviation",
+    "domains": ["dassault-aviation.com", "careers.dassault-aviation.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Symrise AG",
+    "domains": ["symrise.com", "careers.symrise.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "Fuchs Petrolub SE",
+    "domains": ["fuchs.com", "careers.fuchs.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "K+S AG",
+    "domains": ["k-plus-s.com", "kpluss.com", "careers.kpluss.com"],
+    "careerPaths": ["/careers", "/jobs", "/karriere"]
+  },
+  {
+    "name": "Mahle GmbH",
+    "domains": ["mahle.com", "career.mahle.com", "careers.mahle.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  },
+  {
+    "name": "ElringKlinger AG",
+    "domains": ["elringklinger.com", "elringklinger.de", "career.elringklinger.com"],
+    "careerPaths": ["/careers", "/jobs", "/career", "/karriere"]
+  },
+  {
+    "name": "Nouryon",
+    "domains": ["nouryon.com", "careers.nouryon.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Huntsman Corporation",
+    "domains": ["huntsman.com", "careers.huntsman.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Celanese Corporation",
+    "domains": ["celanese.com", "careers.celanese.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Eastman Chemical Europe",
+    "domains": ["eastman.com", "careers.eastman.com"],
+    "careerPaths": ["/careers", "/jobs"]
+  },
+  {
+    "name": "Altana AG",
+    "domains": ["altana.com", "altana.de", "career.altana.com"],
+    "careerPaths": ["/careers", "/jobs", "/career"]
+  }
+]
