@@ -264,7 +264,7 @@ module.exports = async (req, res) => {
 
     // Get Live Search configuration from environment or use defaults
     const searchMode = process.env.XAI_SEARCH_MODE || 'on'; // default to 'on' to force Live Search
-    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '10', 10);
+    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '30', 30);
     const returnCitations = process.env.XAI_RETURN_CITATIONS !== 'false'; // default true
     const debugResponse = process.env.XAI_DEBUG_RESPONSE === 'true'; // default false
 
@@ -317,39 +317,38 @@ module.exports = async (req, res) => {
     }
 
     // Construct prompt for xAI Grok API with strengthened instructions
-const prompt = `You are a precise job search assistant. Find current, real job openings that closely match:
+const prompt = `You are a precise but flexible job search assistant. Find current, real job openings that match or closely relate to:
 
 Criteria:
-- Profession: ${profession}
-- Specialization: ${specialization}
-- Location: ${location}
+- Profession: ${profession} (or close equivalents like Process Engineer, Verfahrenstechniker/in, Prozessingenieur/in)
+- Specialization: ${specialization} (or related areas like catalysis/Katalyse, heterogeneous catalysis, catalyst development, precious metals in catalysts, or roles in catalyst divisions)
+- Location: ${location} (Germany/Deutschland; include hybrid/remote if based in Germany)
 - Companies to search (ONLY these ${companies.length} companies): ${companies.join(', ')}
 
-CRITICAL REQUIREMENTS - URLs MUST BE FROM OFFICIAL COMPANY CAREER SITES ONLY:
+SEARCH GUIDELINES:
+1. Search ONLY official company career websites/domains.
+2. Use site:-style searches internally for each company's career portal.
+3. Look in both English and German (key terms: Chemieingenieur, Verfahrenstechnik, Katalysator, Katalyse, Prozessoptimierung).
+4. Prioritize exact matches, but if none found, return the closest related roles (e.g., process/chemical engineering trainee programs, R&D in catalysis, or commercial roles in catalyst business units).
+5. Accept matches at ~70% relevance or higher.
 
-1. Search ONLY the official company career websites of the ${companies.length} companies listed above.
-2. Use ONLY URLs from the company's own domains (e.g., basf.com, careers.basf.com, covestro.com).
-3. NEVER use job aggregator sites (Indeed, Glassdoor, LinkedIn, Monster, StepStone, etc.).
-4. NEVER use social media sites (Reddit, X/Twitter, Facebook, etc.).
-5. NEVER use ATS vendor domains (myworkdayjobs.com, greenhouse.io, lever.co) unless they are subdomains of the company's official domain.
-6. NEVER use blogs, forums, or unofficial sites (selectyouruniversity.com, etc.).
-7. NEVER invent, guess, or hallucinate job postings or URLs.
-8. Only return jobs that you are 99% sure exist right now with valid, live URLs on the company's official website.
-9. Look for jobs that match at least 70% of the criteria (in German OR English).
-10. Return maximum 10 jobs, ranked by relevance.
+CRITICAL RULES - URLs MUST BE OFFICIAL ONLY:
+1. ONLY direct links from the company's own career domains (e.g., basf.jobs, jobs.basf.com, jobs.arkema.com).
+2. NEVER use aggregators (Indeed, LinkedIn, StepStone, Glassdoor, etc.).
+3. NEVER use ATS subdomains unless part of the company domain.
+4. NEVER invent or guess postings/URLs.
+5. Only include jobs with high confidence they are currently live.
 
-If you cannot find at least 1 real, current opening with an official company career site URL, return an empty jobs array.
+Return up to 10 jobs, ranked by relevance (best first). If no strong matches, return the closest available or an empty array only as last resort.
 
-Output ONLY valid, verified jobs from official company websites. If none found, return empty jobs array.
-
-Final Output (JSON only, no explanations):
+Output ONLY valid JSON:
 {
   "jobs": [
     {
       "title": "Original job title (German or English)",
       "company": "Exact company name",
-      "location": "City/Region from the posting",
-      "link": "Direct application URL from company's official website ONLY"
+      "location": "City/Region from posting (e.g., Ludwigshafen, Berlin)",
+      "link": "Direct application URL from official site"
     }
   ]
 }`;
@@ -376,8 +375,8 @@ Final Output (JSON only, no explanations):
             content: prompt
           }
         ],
-        temperature: 0.3,
-        max_tokens: 3000,
+        temperature: 0.5,
+        max_tokens: 10000,
         search_parameters: {
           mode: searchMode,
           max_search_results: maxSearchResults,
