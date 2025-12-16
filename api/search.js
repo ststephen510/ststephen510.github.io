@@ -264,7 +264,7 @@ module.exports = async (req, res) => {
 
     // Get Live Search configuration from environment or use defaults
     const searchMode = process.env.XAI_SEARCH_MODE || 'on'; // default to 'on' to force Live Search
-    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '30', 30);
+    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '10', 10);
     const returnCitations = process.env.XAI_RETURN_CITATIONS !== 'false'; // default true
     const debugResponse = process.env.XAI_DEBUG_RESPONSE === 'true'; // default false
 
