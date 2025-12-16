@@ -317,38 +317,41 @@ module.exports = async (req, res) => {
     }
 
     // Construct prompt for xAI Grok API with strengthened instructions
-const prompt = `You are a precise but flexible job search assistant. Find current, real job openings that match or closely relate to:
+const prompt = `You are a flexible, thorough job search assistant specialized in chemical industry roles. Find current, real job openings that exactly match or closely relate to the criteria below. Prioritize official company career sites.
 
 Criteria:
-- Profession: ${profession} (or close equivalents like Process Engineer, Verfahrenstechniker/in, Prozessingenieur/in)
-- Specialization: ${specialization} (or related areas like catalysis/Katalyse, heterogeneous catalysis, catalyst development, precious metals in catalysts, or roles in catalyst divisions)
-- Location: ${location} (Germany/Deutschland; include hybrid/remote if based in Germany)
-- Companies to search (ONLY these ${companies.length} companies): ${companies.join(', ')}
+- Profession: ${profession} (equivalents: Chemical Engineer, Chemieingenieur, Process Engineer, Prozessingenieur, Verfahrenstechniker/in)
+- Specialization: ${specialization} (related: catalysis/Katalyse, Katalysator, heterogeneous catalysis, catalyst development, precious metals in catalysts, catalyst business units/divisions)
+- Location: ${location} (Germany/Deutschland; include hybrid if based in Germany)
+- Companies (SEARCH ONLY THESE): ${companies.join(', ')}
 
-SEARCH GUIDELINES:
-1. Search ONLY official company career websites/domains.
-2. Use site:-style searches internally for each company's career portal.
-3. Look in both English and German (key terms: Chemieingenieur, Verfahrenstechnik, Katalysator, Katalyse, Prozessoptimierung).
-4. Prioritize exact matches, but if none found, return the closest related roles (e.g., process/chemical engineering trainee programs, R&D in catalysis, or commercial roles in catalyst business units).
-5. Accept matches at ~70% relevance or higher.
+SEARCH INSTRUCTIONS (CRITICAL - FOLLOW THESE):
+1. Restrict searches to each company's official career domains (e.g., basf.jobs, jobs.basf.com, jobs.arkema.com).
+2. Use targeted site-specific queries like:
+   - site:basf.jobs "Verfahrenstechnik" Deutschland
+   - site:basf.jobs "Chemieingenieur" OR "Prozessingenieur" OR "catalyst" Germany
+   - site:basf.jobs "Katalysator" OR "precious metals"
+   - Similar for other companies (e.g., site:jobs.arkema.com Deutschland Katalysator)
+3. Search in both English and German.
+4. Include close matches: process/chemical engineering roles, trainee programs, internships (Praktikum/Abschlussarbeit) in Verfahrenstechnik/Chemieingenieurwesen, R&D in catalysis, or commercial/technical roles in catalyst divisions.
+5. Prioritize exact matches but return relevant close matches (70%+ relevance) if no perfect ones.
 
-CRITICAL RULES - URLs MUST BE OFFICIAL ONLY:
-1. ONLY direct links from the company's own career domains (e.g., basf.jobs, jobs.basf.com, jobs.arkema.com).
-2. NEVER use aggregators (Indeed, LinkedIn, StepStone, Glassdoor, etc.).
-3. NEVER use ATS subdomains unless part of the company domain.
-4. NEVER invent or guess postings/URLs.
-5. Only include jobs with high confidence they are currently live.
+RULES FOR VALID JOBS:
+1. ONLY direct URLs from official company domains.
+2. NO aggregators, ATS vendors (unless company subdomain), social media, or unofficial sites.
+3. NO invention/guessing – only high-confidence live postings.
+4. Return up to 10 jobs, ranked by relevance.
 
-Return up to 10 jobs, ranked by relevance (best first). If no strong matches, return the closest available or an empty array only as last resort.
+If no matches, return empty jobs array (but try hard to find close ones first).
 
-Output ONLY valid JSON:
+Output ONLY JSON:
 {
   "jobs": [
     {
-      "title": "Original job title (German or English)",
+      "title": "Original title (German or English)",
       "company": "Exact company name",
-      "location": "City/Region from posting (e.g., Ludwigshafen, Berlin)",
-      "link": "Direct application URL from official site"
+      "location": "City/Region from posting",
+      "link": "Direct official URL"
     }
   ]
 }`;
