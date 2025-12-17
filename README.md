@@ -307,7 +307,7 @@ The platform uses xAI's Agent Tools API with the `grok-4-1-fast-reasoning` model
 
 ### Migration from Live Search
 
-On December 15, 2025, xAI deprecated the Live Search feature (`search_parameters`). The platform has been migrated to the **Agent Tools API**, which provides:
+In December 2024, xAI deprecated the Live Search feature (`search_parameters`). The platform has been migrated to the **Agent Tools API**, which provides:
 
 - **Autonomous Web Browsing**: The model automatically uses web search tools to find real-time job postings
 - **Better Results**: Superior deep research capabilities for complex career sites like basf.jobs

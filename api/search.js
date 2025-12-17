@@ -415,9 +415,9 @@ module.exports = async (req, res) => {
       }
     });
 
-const prompt = `You are an expert job researcher. Use web search tools aggressively to browse official career sites and extract live job postings. Visit each company's official career portal (e.g., site:basf.jobs), apply filters for Germany + catalyst/Verfahrenstechnik, and extract direct job links/titles.
+const prompt = `You are an expert job researcher specialized in chemical industry roles. Use web search tools aggressively to browse official career sites and extract live job postings. Visit each company's official career portal, apply filters for the specified location and specialization, and extract direct job links/titles.
 
-You are a flexible, thorough job search assistant specialized in chemical industry roles. Find current, real job openings that exactly match or closely relate to the criteria below. Prioritize official company career sites.
+Find current, real job openings that exactly match or closely relate to the criteria below.
 
 Criteria:
 - Profession: ${profession} (equivalents: Chemical Engineer, Chemieingenieur, Process Engineer, Prozessingenieur, Verfahrenstechniker/in)
@@ -427,23 +427,18 @@ Criteria:
 ${careerSiteInstructions}
 AGENT SEARCH STRATEGY (CRITICAL - USE WEB SEARCH TOOL):
 1. Use web_search tool to visit each company's official career portal
-2. Apply site-specific searches like:
-   - site:basf.jobs "Verfahrenstechnik" Deutschland
-   - site:basf.jobs "Chemieingenieur" OR "Prozessingenieur" OR "catalyst" Germany
-   - site:basf.jobs "Katalysator" OR "precious metals"
-   - Similar for other companies using their approved domains listed above
+2. Apply site-specific searches using the approved domains listed above:
+   - site:[company_domain] "[specialization_keywords]" [location]
+   - site:[company_domain] "Chemieingenieur" OR "Prozessingenieur" OR "catalyst" [location]
+   - site:[company_domain] "[relevant_german_terms]"
 3. Browse deeply into career pages, follow job listing links
 4. Extract job title, location, and direct application URL from each posting
 
 SEARCH INSTRUCTIONS (CRITICAL - FOLLOW THESE):
 1. ONLY use the approved career site URLs and domains listed above for each company.
-2. Restrict searches to each company's official career domains (e.g., basf.jobs, jobs.basf.com, jobs.arkema.com).
+2. Restrict searches to each company's official career domains.
 3. Prefer direct job-posting pages from the approved career URLs.
-4. Use targeted site-specific queries like:
-   - site:basf.jobs "Verfahrenstechnik" Deutschland
-   - site:basf.jobs "Chemieingenieur" OR "Prozessingenieur" OR "catalyst" Germany
-   - site:basf.jobs "Katalysator" OR "precious metals"
-   - Similar for other companies (e.g., site:jobs.arkema.com Deutschland Katalysator)
+4. Use targeted site-specific queries for each company's domains.
 5. Search in both English and German.
 6. Include close matches: process/chemical engineering roles, trainee programs, internships (Praktikum/Abschlussarbeit) in Verfahrenstechnik/Chemieingenieurwesen, R&D in catalysis, or commercial/technical roles in catalyst divisions.
 7. Prioritize exact matches but return relevant close matches (70%+ relevance) if no perfect ones.
