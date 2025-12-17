@@ -339,13 +339,13 @@ module.exports = async (req, res) => {
     const debugResponse = process.env.XAI_DEBUG_RESPONSE === 'true'; // default false
 
     // Validate request body
-    const { profession, specialization, location, companies: selectedCompanies } = req.body;
-    if (!profession || !specialization || !location) {
+    const { profession, specialization = '', location, companies: selectedCompanies } = req.body;
+    if (!profession || !location) {
       console.log(`[${requestId}] ERROR: Missing required fields`);
       return res.status(400).json({ 
         error: 'Missing required fields',
-        required: ['profession', 'specialization', 'location'],
-        received: { profession, specialization, location },
+        required: ['profession', 'location'],
+        received: { profession, location },
         requestId
       });
     }
@@ -421,7 +421,7 @@ Find current, real job openings that exactly match or closely relate to the crit
 
 Criteria:
 - Profession: ${profession} (equivalents: Chemical Engineer, Chemieingenieur, Process Engineer, Prozessingenieur, Verfahrenstechniker/in)
-- Specialization: ${specialization} (related: catalysis/Katalyse, Katalysator, heterogeneous catalysis, catalyst development, precious metals in catalysts, catalyst business units/divisions)
+${specialization ? `- Specialization: ${specialization} (related: catalysis/Katalyse, Katalysator, heterogeneous catalysis, catalyst development)` : '- Specialization: Any (search all specializations)'}
 - Location: ${location} (Germany/Deutschland; include hybrid if based in Germany)
 - Companies (SEARCH ONLY THESE): ${companies.join(', ')}
 ${careerSiteInstructions}
