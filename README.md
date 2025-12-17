@@ -4,7 +4,7 @@ An AI-powered job search platform that helps you discover career opportunities a
 
 **NEW:** Now with company-selection-driven search! Select 1-3 specific companies to search for targeted job opportunities.
 
-**🌟 LATEST:** xAI Live Search integration! The platform now uses real-time web search to reduce hallucinated URLs and provides source citations for transparency.
+**🌟 LATEST:** xAI Agent Tools API integration! The platform now uses autonomous web browsing with `grok-4-1-fast-reasoning` for superior job search results from complex career sites, replacing the deprecated Live Search feature.
 
 ## 🏗️ Architecture
 
@@ -42,8 +42,8 @@ Quick summary:
 
 - 🔬 **180 European Companies**: Interactive list of major chemical engineering companies, research institutes, and industry leaders
 - 🎯 **Company Selection**: Select 1-3 specific companies for targeted job search
-- 🤖 **AI-Powered Search**: Uses xAI's Grok API with web search to find real, current job openings at your selected companies
-- 🌐 **Live Search Integration**: xAI Live Search provides real-time web results and reduces hallucinated URLs
+- 🤖 **AI-Powered Search**: Uses xAI's Grok API with Agent Tools for autonomous web browsing to find real, current job openings at your selected companies
+- 🌐 **Agent Tools Integration**: Autonomous web search with `grok-4-1-fast-reasoning` provides superior results from complex career sites
 - 📚 **Source Citations**: View the actual sources used by the AI, displayed as clickable links for verification
 - 🏢 **Official Career Sites**: API returns verified career site information for each selected company (URLs and domains)
 - 🔍 **Smart Filtering**: Filter company list with real-time search
@@ -55,7 +55,7 @@ Quick summary:
 
 - **Frontend**: HTML, CSS, Vanilla JavaScript (static, hosted on GitHub Pages)
 - **Backend**: Node.js serverless functions (hosted on Vercel)
-- **AI**: xAI Grok API with Live Search (grok-4-1-fast-reasoning model, configurable via XAI_MODEL)
+- **AI**: xAI Grok API with Agent Tools (grok-4-1-fast-reasoning model, configurable via XAI_MODEL)
 - **Dependencies**: axios (backend only)
 
 ## Project Structure
@@ -301,29 +301,37 @@ This defense-in-depth approach combines:
 2. **Server-side filtering** - Backend validates all URLs against allowlist
 3. **Blocked domain list** - Known bad actors are explicitly rejected
 
-## Live Search Configuration
+## Agent Tools API
 
-The platform integrates xAI's Live Search feature to provide real-time web results and reduce hallucinated job URLs. Live Search can be configured using environment variables:
+The platform uses xAI's Agent Tools API with the `grok-4-1-fast-reasoning` model, providing autonomous web browsing capabilities for superior job search results.
+
+### Migration from Live Search
+
+On December 15, 2025, xAI deprecated the Live Search feature (`search_parameters`). The platform has been migrated to the **Agent Tools API**, which provides:
+
+- **Autonomous Web Browsing**: The model automatically uses web search tools to find real-time job postings
+- **Better Results**: Superior deep research capabilities for complex career sites like basf.jobs
+- **No Manual Configuration**: The model handles search autonomously without additional parameters
+- **Free Tool Usage**: Agent Tools API usage is included at no extra cost
+
+### How It Works
+
+1. **Autonomous Search**: The model automatically uses its web_search tool to browse official career sites
+2. **Deep Research**: Applies site-specific filters (e.g., `site:basf.jobs "Verfahrenstechnik" Deutschland`)
+3. **Citations**: Returns URLs of sources that were consulted during autonomous browsing
+4. **Transparency**: Frontend displays citations as clickable links for verification
 
 ### Environment Variables
 
-**XAI_SEARCH_MODE** (default: `on`)
-- `on`: Always use Live Search for every request (default, recommended)
-- `auto`: Automatically decides when to use Live Search based on query
-- `off`: Disable Live Search (not recommended for production)
+**XAI_API_KEY** (required)
+- Your xAI API key from [console.x.ai](https://console.x.ai)
 
-**XAI_MAX_SEARCH_RESULTS** (default: `10`)
-- Number of web search results to use when Live Search is active
-- Range: 1-100 (recommended: 10-20 for balance of quality and speed)
-
-**XAI_RETURN_CITATIONS** (default: `true`)
-- When `true`, the API returns source URLs that were used
-- Citations are displayed in the frontend as clickable links
-- Set to `false` to hide citations (not recommended)
+**XAI_MODEL** (default: `grok-4-1-fast-reasoning`)
+- The xAI model to use
+- Must be `grok-4-1-fast-reasoning` for Agent Tools support
 
 **XAI_DEBUG_RESPONSE** (default: `false`)
 - When `true`, enables verbose diagnostic logging of xAI API responses
-- Logs top-level response structure, choice keys, message keys, and potential citation locations
 - Useful for debugging when citations or search results are not appearing as expected
 - Set to `false` in production to reduce log volume
 
@@ -334,27 +342,18 @@ The platform integrates xAI's Live Search feature to provide real-time web resul
 XAI_API_KEY=your_api_key_here
 XAI_MODEL=grok-4-1-fast-reasoning
 
-# Live Search - recommended production settings
-XAI_SEARCH_MODE=on
-XAI_MAX_SEARCH_RESULTS=10
-XAI_RETURN_CITATIONS=true
+# Optional: Enable debug logging
 XAI_DEBUG_RESPONSE=false
 ```
 
-### How It Works
-
-1. **Request**: Backend includes `search_parameters` in xAI API call
-2. **Live Search**: xAI searches the web in real-time for current job postings
-3. **Citations**: API returns URLs of sources that were actually consulted
-4. **Display**: Frontend shows citations below job results for transparency
-5. **Verification**: Users can click citations to verify the AI's sources
-
 ### Benefits
 
-- ✅ **Reduced Hallucinations**: Real web results instead of invented URLs
+- ✅ **Reduced Hallucinations**: Real web results from autonomous browsing
 - ✅ **Current Information**: Up-to-date job postings from company websites
+- ✅ **Better Complex Searches**: Improved results from sites requiring internal filters (e.g., basf.jobs)
 - ✅ **Transparency**: Citations show exactly what sources were used
 - ✅ **Trust**: Users can verify results by clicking source links
+- ✅ **No Extra Configuration**: Works automatically with the model
 
 ## Customization
 
