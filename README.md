@@ -45,6 +45,7 @@ Quick summary:
 - 🤖 **AI-Powered Search**: Uses xAI's Grok API with web search to find real, current job openings at your selected companies
 - 🌐 **Live Search Integration**: xAI Live Search provides real-time web results and reduces hallucinated URLs
 - 📚 **Source Citations**: View the actual sources used by the AI, displayed as clickable links for verification
+- 🏢 **Official Career Sites**: API returns verified career site information for each selected company (URLs and domains)
 - 🔍 **Smart Filtering**: Filter company list with real-time search
 - ⚡ **Focused Results**: Search only the official career pages of your selected companies
 - 🎨 **Clean Interface**: Simple, professional design with responsive layout
@@ -196,6 +197,18 @@ Search for jobs matching criteria at selected companies (Vercel serverless funct
       "title": "Covestro Jobs"
     }
   ],
+  "career_sites": [
+    {
+      "company": "BASF SE",
+      "urls": ["https://basf.jobs/", "https://www.basf.com/global/en/careers"],
+      "domains": ["basf.com", "jobs.basf.com", "career.basf.com", "careers.basf.com"]
+    },
+    {
+      "company": "Covestro AG",
+      "urls": ["https://www.covestro.com/en/career"],
+      "domains": ["covestro.com", "career.covestro.com", "careers.covestro.com"]
+    }
+  ],
   "count": 10,
   "query": {
     "profession": "Chemical Engineer",
@@ -213,6 +226,19 @@ Search for jobs matching criteria at selected companies (Vercel serverless funct
   "hint": "Please select 1-3 companies to search"
 }
 ```
+
+**Response Fields**:
+
+- `jobs`: Array of job objects with title, company, location, and link
+- `citations`: Array of source URLs that the AI consulted (from Live Search)
+- `career_sites`: Array of official career site information for each selected company:
+  - `company`: Company name
+  - `urls`: Official career site URLs from `companies.txt`
+  - `domains`: Approved domains from `companies.json` (used for URL validation)
+- `count`: Number of jobs returned
+- `query`: Echo of the search criteria
+- `requestId`: Unique request identifier for debugging
+- `warning` (optional): Warning message if results were filtered or unavailable
 
 ## Company Database
 

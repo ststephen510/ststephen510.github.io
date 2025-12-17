@@ -27,6 +27,39 @@ function loadCompaniesAllowlist() {
   }
 }
 
+// Load and parse companies.txt to extract career URLs
+let companiesTxtData = null;
+function loadCompaniesTxt() {
+  if (companiesTxtData) {
+    return companiesTxtData;
+  }
+  
+  try {
+    const companiesTxtPath = path.join(process.cwd(), 'companies.txt');
+    const txtContent = fs.readFileSync(companiesTxtPath, 'utf8');
+    
+    // Parse companies.txt - format: "Company Name — URL1 | URL2 | URL3"
+    const companyMap = new Map();
+    const lines = txtContent.split('\n').filter(line => line.trim());
+    
+    lines.forEach(line => {
+      const match = line.match(/^(.+?)\s*—\s*(.+)$/);
+      if (match) {
+        const companyName = match[1].trim();
+        const urlsPart = match[2].trim();
+        const urls = urlsPart.split('|').map(url => url.trim()).filter(url => url);
+        companyMap.set(companyName, urls);
+      }
+    });
+    
+    companiesTxtData = companyMap;
+    return companiesTxtData;
+  } catch (error) {
+    console.error('Failed to load companies.txt:', error.message);
+    return new Map();
+  }
+}
+
 // Blocked domains - social media, job boards, and aggregators
 const BLOCKED_DOMAINS = [
   'reddit.com',
@@ -146,6 +179,44 @@ function getAllowedDomainsForCompanies(selectedCompanies, allowlist) {
     allowedDomains: Array.from(allowedDomains),
     companiesWithoutAllowlist
   };
+}
+
+// Build career sites information for selected companies
+function buildCareerSites(selectedCompanies, allowlist, companiesTxt) {
+  const careerSites = [];
+  
+  selectedCompanies.forEach(companyName => {
+    const companyEntry = allowlist.find(c => 
+      c.name.toLowerCase() === companyName.toLowerCase()
+    );
+    
+    // Get domains from companies.json
+    const domains = companyEntry && companyEntry.domains ? companyEntry.domains : [];
+    
+    // Get career URLs from companies.txt
+    const urls = [];
+    for (const [txtCompanyName, txtUrls] of companiesTxt) {
+      if (txtCompanyName.toLowerCase() === companyName.toLowerCase()) {
+        urls.push(...txtUrls);
+        break;
+      }
+    }
+    
+    // Validate URLs against allowlist domains before including
+    const validatedUrls = urls.filter(url => {
+      const hostname = extractHostname(url);
+      if (!hostname) return false;
+      return isHostnameAllowed(hostname, domains);
+    });
+    
+    careerSites.push({
+      company: companyName,
+      urls: validatedUrls,
+      domains: domains
+    });
+  });
+  
+  return careerSites;
 }
 
 // Filter jobs by allowed domains
@@ -307,16 +378,44 @@ module.exports = async (req, res) => {
     // Use the selected companies from the client
     const companies = selectedCompanies.map(c => c.trim()).filter(c => c.length > 0);
     
-    // Load company allowlist and get allowed domains
+    // Load company allowlist and companies.txt
     const allowlist = loadCompaniesAllowlist();
+    const companiesTxt = loadCompaniesTxt();
+    
+    // Get allowed domains for filtering
     const { allowedDomains, companiesWithoutAllowlist } = getAllowedDomainsForCompanies(companies, allowlist);
+    
+    // Build career sites information
+    const careerSites = buildCareerSites(companies, allowlist, companiesTxt);
     
     console.log(`[${requestId}] Allowed domains for selected companies: ${allowedDomains.length > 0 ? allowedDomains.join(', ') : 'none'}`);
     if (companiesWithoutAllowlist.length > 0) {
       console.log(`[${requestId}] WARNING: No allowlist entries for: ${companiesWithoutAllowlist.join(', ')}`);
     }
+    console.log(`[${requestId}] Career sites built for ${careerSites.length} companies`);
+    careerSites.forEach(cs => {
+      console.log(`[${requestId}]   ${cs.company}: ${cs.urls.length} URLs, ${cs.domains.length} domains`);
+    });
 
-    // Construct prompt for xAI Grok API with strengthened instructions
+    // Construct prompt for xAI Grok API with strengthened instructions and explicit career sites
+    // Build career site instructions section
+    let careerSiteInstructions = '\nAPPROVED CAREER SITES (USE ONLY THESE):\n';
+    careerSites.forEach(cs => {
+      careerSiteInstructions += `\n${cs.company}:\n`;
+      if (cs.urls.length > 0) {
+        careerSiteInstructions += `  Official Career URLs:\n`;
+        cs.urls.forEach(url => {
+          careerSiteInstructions += `    - ${url}\n`;
+        });
+      }
+      if (cs.domains.length > 0) {
+        careerSiteInstructions += `  Approved Domains:\n`;
+        cs.domains.forEach(domain => {
+          careerSiteInstructions += `    - ${domain}\n`;
+        });
+      }
+    });
+
 const prompt = `You are a flexible, thorough job search assistant specialized in chemical industry roles. Find current, real job openings that exactly match or closely relate to the criteria below. Prioritize official company career sites.
 
 Criteria:
@@ -324,20 +423,22 @@ Criteria:
 - Specialization: ${specialization} (related: catalysis/Katalyse, Katalysator, heterogeneous catalysis, catalyst development, precious metals in catalysts, catalyst business units/divisions)
 - Location: ${location} (Germany/Deutschland; include hybrid if based in Germany)
 - Companies (SEARCH ONLY THESE): ${companies.join(', ')}
-
+${careerSiteInstructions}
 SEARCH INSTRUCTIONS (CRITICAL - FOLLOW THESE):
-1. Restrict searches to each company's official career domains (e.g., basf.jobs, jobs.basf.com, jobs.arkema.com).
-2. Use targeted site-specific queries like:
+1. ONLY use the approved career site URLs and domains listed above for each company.
+2. Restrict searches to each company's official career domains (e.g., basf.jobs, jobs.basf.com, jobs.arkema.com).
+3. Prefer direct job-posting pages from the approved career URLs.
+4. Use targeted site-specific queries like:
    - site:basf.jobs "Verfahrenstechnik" Deutschland
    - site:basf.jobs "Chemieingenieur" OR "Prozessingenieur" OR "catalyst" Germany
    - site:basf.jobs "Katalysator" OR "precious metals"
    - Similar for other companies (e.g., site:jobs.arkema.com Deutschland Katalysator)
-3. Search in both English and German.
-4. Include close matches: process/chemical engineering roles, trainee programs, internships (Praktikum/Abschlussarbeit) in Verfahrenstechnik/Chemieingenieurwesen, R&D in catalysis, or commercial/technical roles in catalyst divisions.
-5. Prioritize exact matches but return relevant close matches (70%+ relevance) if no perfect ones.
+5. Search in both English and German.
+6. Include close matches: process/chemical engineering roles, trainee programs, internships (Praktikum/Abschlussarbeit) in Verfahrenstechnik/Chemieingenieurwesen, R&D in catalysis, or commercial/technical roles in catalyst divisions.
+7. Prioritize exact matches but return relevant close matches (70%+ relevance) if no perfect ones.
 
 RULES FOR VALID JOBS:
-1. ONLY direct URLs from official company domains.
+1. ONLY direct URLs from the approved domains listed above.
 2. NO aggregators, ATS vendors (unless company subdomain), social media, or unofficial sites.
 3. NO invention/guessing – only high-confidence live postings.
 4. Return up to 10 jobs, ranked by relevance.
@@ -550,6 +651,7 @@ Output ONLY JSON:
     const responseData = {
       jobs: filteredJobs,
       citations: filteredCitations,
+      career_sites: careerSites,
       count: filteredJobs.length,
       query: { profession, specialization, location },
       requestId
