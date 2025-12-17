@@ -235,9 +235,7 @@ app.post('/search', async (req, res) => {
     }
 
     // Get Live Search configuration from environment or use defaults
-    const searchMode = process.env.XAI_SEARCH_MODE || 'auto';
-    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '10', 10);
-    const returnCitations = process.env.XAI_RETURN_CITATIONS !== 'false'; // default true
+    const debugResponse = process.env.XAI_DEBUG_RESPONSE === 'true'; // default false
 
     // Extract search parameters from request
     const { profession, specialization, location, companies: selectedCompanies } = req.body;
@@ -283,7 +281,7 @@ app.post('/search', async (req, res) => {
     }
 
     console.log(`Search request: ${profession}, ${specialization}, ${location}`);
-    console.log(`Live Search config: mode=${searchMode}, max_results=${maxSearchResults}, return_citations=${returnCitations}`);
+    console.log(`Using Agent Tools API with autonomous web search`);
 
     // Load company allowlist and get allowed domains
     const allowlist = loadCompaniesAllowlist();
@@ -342,20 +340,15 @@ Final Output (JSON only, no explanations):
         messages: [
           {
             role: 'system',
-            content: 'You are a factual, verification-focused assistant. Never invent data. Base responses only on verifiable real-world information. Output strictly valid JSON.'
+            content: 'You are an expert job researcher. Use web search tools aggressively to browse official career sites and extract live job postings. Visit each company\'s official career portal (e.g., site:basf.jobs), apply filters for Germany + catalyst/Verfahrenstechnik, and extract direct job links/titles. Never invent data. Base responses only on verifiable real-world information. Output strictly valid JSON.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.3,
-        max_tokens: 3000,
-        search_parameters: {
-          mode: searchMode,
-          max_search_results: maxSearchResults,
-          return_citations: returnCitations
-        }
+        temperature: 0.4,
+        max_tokens: 3000
       },
       {
         headers: {
@@ -382,7 +375,7 @@ Final Output (JSON only, no explanations):
     }
     
     if (citations.length > 0) {
-      console.log(`Received ${citations.length} citations from Live Search`);
+      console.log(`Received ${citations.length} citations from autonomous web browsing`);
     }
     
     // Parse the JSON response from Grok
