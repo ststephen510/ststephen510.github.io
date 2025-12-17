@@ -335,10 +335,7 @@ module.exports = async (req, res) => {
     // Get model from environment or use default
     const model = process.env.XAI_MODEL || 'grok-4-1-fast-reasoning';
 
-    // Get Live Search configuration from environment or use defaults
-    const searchMode = process.env.XAI_SEARCH_MODE || 'on'; // default to 'on' to force Live Search
-    const maxSearchResults = parseInt(process.env.XAI_MAX_SEARCH_RESULTS || '10', 10);
-    const returnCitations = process.env.XAI_RETURN_CITATIONS !== 'false'; // default true
+    // Get debug response configuration from environment
     const debugResponse = process.env.XAI_DEBUG_RESPONSE === 'true'; // default false
 
     // Validate request body
@@ -375,7 +372,7 @@ module.exports = async (req, res) => {
 
     console.log(`[${requestId}] Searching for: ${profession} - ${specialization} - ${location}`);
     console.log(`[${requestId}] Selected companies: ${selectedCompanies.join(', ')}`);
-    console.log(`[${requestId}] Live Search config: mode=${searchMode}, max_results=${maxSearchResults}, return_citations=${returnCitations}`);
+    console.log(`[${requestId}] Using Agent Tools API with autonomous web search`);
 
     // Use the selected companies from the client
     const companies = selectedCompanies.map(c => c.trim()).filter(c => c.length > 0);
@@ -418,7 +415,9 @@ module.exports = async (req, res) => {
       }
     });
 
-const prompt = `You are a flexible, thorough job search assistant specialized in chemical industry roles. Find current, real job openings that exactly match or closely relate to the criteria below. Prioritize official company career sites.
+const prompt = `You are an expert job researcher. Use web search tools aggressively to browse official career sites and extract live job postings. Visit each company's official career portal (e.g., site:basf.jobs), apply filters for Germany + catalyst/Verfahrenstechnik, and extract direct job links/titles.
+
+You are a flexible, thorough job search assistant specialized in chemical industry roles. Find current, real job openings that exactly match or closely relate to the criteria below. Prioritize official company career sites.
 
 Criteria:
 - Profession: ${profession} (equivalents: Chemical Engineer, Chemieingenieur, Process Engineer, Prozessingenieur, Verfahrenstechniker/in)
@@ -426,6 +425,16 @@ Criteria:
 - Location: ${location} (Germany/Deutschland; include hybrid if based in Germany)
 - Companies (SEARCH ONLY THESE): ${companies.join(', ')}
 ${careerSiteInstructions}
+AGENT SEARCH STRATEGY (CRITICAL - USE WEB SEARCH TOOL):
+1. Use web_search tool to visit each company's official career portal
+2. Apply site-specific searches like:
+   - site:basf.jobs "Verfahrenstechnik" Deutschland
+   - site:basf.jobs "Chemieingenieur" OR "Prozessingenieur" OR "catalyst" Germany
+   - site:basf.jobs "Katalysator" OR "precious metals"
+   - Similar for other companies using their approved domains listed above
+3. Browse deeply into career pages, follow job listing links
+4. Extract job title, location, and direct application URL from each posting
+
 SEARCH INSTRUCTIONS (CRITICAL - FOLLOW THESE):
 1. ONLY use the approved career site URLs and domains listed above for each company.
 2. Restrict searches to each company's official career domains (e.g., basf.jobs, jobs.basf.com, jobs.arkema.com).
@@ -468,26 +477,21 @@ Output ONLY JSON:
     // Call xAI Grok API using native fetch (available in Node.js 18+)
     let response;
     try {
-      // Construct request body with Live Search parameters
+      // Construct request body for Agent Tools API
       const requestBody = {
         model,
         messages: [
           {
             role: 'system',
-            content: 'You are a factual, verification-focused assistant. Never invent data. Base responses only on verifiable real-world information. Output strictly valid JSON.'
+            content: 'You are an expert job researcher. Use web search tools aggressively to browse official career sites and extract live job postings. Visit each company\'s official career portal (e.g., site:basf.jobs), apply filters for Germany + catalyst/Verfahrenstechnik, and extract direct job links/titles. Never invent data. Base responses only on verifiable real-world information. Output strictly valid JSON.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.5,
-        max_tokens: 10000,
-        search_parameters: {
-          mode: searchMode,
-          max_search_results: maxSearchResults,
-          return_citations: returnCitations
-        }
+        temperature: 0.4,
+        max_tokens: 10000
       };
 
       response = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -585,7 +589,7 @@ Output ONLY JSON:
     }
     
     if (citations.length > 0) {
-      console.log(`[${requestId}] Received ${citations.length} citations from Live Search`);
+      console.log(`[${requestId}] Received ${citations.length} citations from autonomous web browsing`);
     } else {
       console.log(`[${requestId}] No citations found in response`);
     }
