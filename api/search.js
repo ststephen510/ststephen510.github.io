@@ -39,16 +39,19 @@ function loadCompaniesTxt() {
     const txtContent = fs.readFileSync(companiesTxtPath, 'utf8');
     
     // Parse companies.txt - format: "Company Name — URL1 | URL2 | URL3"
+    // Note: Uses em dash (—) character as separator
     const companyMap = new Map();
     const lines = txtContent.split('\n').filter(line => line.trim());
     
     lines.forEach(line => {
-      const match = line.match(/^(.+?)\s*—\s*(.+)$/);
+      // Match em dash (—) or regular dash (-) for flexibility
+      const match = line.match(/^(.+?)\s*[—–-]\s*(.+)$/);
       if (match) {
         const companyName = match[1].trim();
         const urlsPart = match[2].trim();
         const urls = urlsPart.split('|').map(url => url.trim()).filter(url => url);
-        companyMap.set(companyName, urls);
+        // Store with normalized lowercase key for case-insensitive lookup
+        companyMap.set(companyName.toLowerCase(), urls);
       }
     });
     
@@ -185,22 +188,21 @@ function getAllowedDomainsForCompanies(selectedCompanies, allowlist) {
 function buildCareerSites(selectedCompanies, allowlist, companiesTxt) {
   const careerSites = [];
   
+  // Create a Map of allowlist for O(1) lookup instead of O(n) find
+  const allowlistMap = new Map();
+  allowlist.forEach(company => {
+    allowlistMap.set(company.name.toLowerCase(), company);
+  });
+  
   selectedCompanies.forEach(companyName => {
-    const companyEntry = allowlist.find(c => 
-      c.name.toLowerCase() === companyName.toLowerCase()
-    );
+    const normalizedName = companyName.toLowerCase();
+    const companyEntry = allowlistMap.get(normalizedName);
     
     // Get domains from companies.json
     const domains = companyEntry && companyEntry.domains ? companyEntry.domains : [];
     
-    // Get career URLs from companies.txt
-    const urls = [];
-    for (const [txtCompanyName, txtUrls] of companiesTxt) {
-      if (txtCompanyName.toLowerCase() === companyName.toLowerCase()) {
-        urls.push(...txtUrls);
-        break;
-      }
-    }
+    // Get career URLs from companies.txt using direct Map lookup
+    const urls = companiesTxt.get(normalizedName) || [];
     
     // Validate URLs against allowlist domains before including
     const validatedUrls = urls.filter(url => {
