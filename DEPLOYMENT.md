@@ -62,19 +62,7 @@ This is **critical** for the application to work:
    - **Value**: `grok-4-1-fast-reasoning` (or another model - defaults to `grok-4-1-fast-reasoning` if not set)
    - **Environment**: Select all environments (Production, Preview, Development)
    
-   **Optional (Live Search Configuration):**
-   - **Name**: `XAI_SEARCH_MODE`
-   - **Value**: `on` (options: `on`, `auto`, `off` - defaults to `on` if not set)
-   - **Environment**: Select all environments (Production, Preview, Development)
-   
-   - **Name**: `XAI_MAX_SEARCH_RESULTS`
-   - **Value**: `10` (defaults to `10` if not set, recommended range: 5-20)
-   - **Environment**: Select all environments (Production, Preview, Development)
-   
-   - **Name**: `XAI_RETURN_CITATIONS`
-   - **Value**: `true` (defaults to `true` if not set)
-   - **Environment**: Select all environments (Production, Preview, Development)
-   
+   **Optional (Debugging):**
    - **Name**: `XAI_DEBUG_RESPONSE`
    - **Value**: `false` (set to `true` to enable diagnostic logging - defaults to `false` if not set)
    - **Environment**: Select all environments (Production, Preview, Development)
@@ -92,21 +80,12 @@ This is **critical** for the application to work:
 - The default model is `grok-4-1-fast-reasoning`
 - If you don't set this variable, the application will use `grok-4-1-fast-reasoning` automatically
 - Set this if you want to use a different xAI model (check [xAI documentation](https://docs.x.ai) for available models)
+- **Important**: Agent Tools API requires `grok-4-1-fast-reasoning` for autonomous web browsing
 
-**Note on Live Search Configuration:**
-- **XAI_SEARCH_MODE**: Controls when Live Search is used
-  - `on` (default, recommended): Always use Live Search for every request (may be slower but more accurate)
-  - `auto`: xAI decides when to use Live Search based on the query
-  - `off`: Disable Live Search (not recommended - may result in hallucinated URLs)
-  
-- **XAI_MAX_SEARCH_RESULTS**: Number of web search results to use (1-100)
-  - Default: `10` is a good balance of quality and speed
-  - Higher values may provide more context but slower responses
-  
-- **XAI_RETURN_CITATIONS**: Show source URLs in results
-  - `true` (recommended): Display citations for transparency
-  - `false`: Hide citations (not recommended)
-
+**Note on Agent Tools API:**
+- The Agent Tools API automatically uses web search capabilities
+- No manual configuration needed - the model handles search autonomously
+- Citations from autonomous browsing are automatically returned when available
 - **XAI_DEBUG_RESPONSE**: Enable diagnostic logging for troubleshooting
   - `false` (default): Normal operation with standard logs
   - `true`: Verbose logging of xAI API response structure, useful for debugging citation issues
@@ -430,9 +409,6 @@ npm install express dotenv cors
 # Create .env file with your API key and configuration
 echo "XAI_API_KEY=your_key_here" > .env
 echo "XAI_MODEL=grok-4-1-fast-reasoning" >> .env
-echo "XAI_SEARCH_MODE=on" >> .env
-echo "XAI_MAX_SEARCH_RESULTS=10" >> .env
-echo "XAI_RETURN_CITATIONS=true" >> .env
 echo "XAI_DEBUG_RESPONSE=false" >> .env
 
 # Run the server
@@ -490,16 +466,13 @@ vercel dev
 
 1. Go to Vercel Dashboard → Your Project
 2. Click **Settings** → **Environment Variables**
-3. Update the value of `XAI_API_KEY`, `XAI_MODEL`, or Live Search variables, or add new variables
+3. Update the value of `XAI_API_KEY`, `XAI_MODEL`, or other variables, or add new variables
 4. Go to **Deployments** tab
 5. Click **"Redeploy"** on the latest deployment to apply changes
 
 **Available Environment Variables:**
 - `XAI_API_KEY` (required): Your xAI API key
-- `XAI_MODEL` (optional): The xAI model to use (defaults to `grok-4-1-fast-reasoning` if not set)
-- `XAI_SEARCH_MODE` (optional): Live Search mode - `on`, `auto`, or `off` (defaults to `on`)
-- `XAI_MAX_SEARCH_RESULTS` (optional): Number of search results to use (defaults to `10`)
-- `XAI_RETURN_CITATIONS` (optional): Return source citations - `true` or `false` (defaults to `true`)
+- `XAI_MODEL` (optional): The xAI model to use (defaults to `grok-4-1-fast-reasoning` if not set; must be `grok-4-1-fast-reasoning` for Agent Tools)
 - `XAI_DEBUG_RESPONSE` (optional): Enable diagnostic response logging - `true` or `false` (defaults to `false`)
 
 ### Adding Companies to the Domain Allowlist
