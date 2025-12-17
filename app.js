@@ -238,12 +238,12 @@ app.post('/search', async (req, res) => {
     const debugResponse = process.env.XAI_DEBUG_RESPONSE === 'true'; // default false
 
     // Extract search parameters from request
-    const { profession, specialization, location, companies: selectedCompanies } = req.body;
+    const { profession, specialization = '', location, companies: selectedCompanies } = req.body;
 
     // Validate input parameters
-    if (!profession || !specialization || !location) {
+    if (!profession || !location) {
       return res.status(400).json({ 
-        error: 'Missing required fields: profession, specialization, and location are required' 
+        error: 'Missing required fields: profession and location are required' 
       });
     }
 
@@ -297,7 +297,7 @@ app.post('/search', async (req, res) => {
 
 Criteria:
 - Profession: ${profession}
-- Specialization: ${specialization}
+${specialization ? `- Specialization: ${specialization}` : '- Specialization: Any'}
 - Location: ${location}
 - Companies to search (ONLY these ${companies.length} companies): ${companies.join(', ')}
 
