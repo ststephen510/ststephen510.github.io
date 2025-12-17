@@ -112,10 +112,7 @@ If you want to test the application locally before deploying:
    # XAI_API_KEY=your_actual_api_key_here
    # XAI_MODEL=grok-4-1-fast-reasoning (optional, defaults to grok-4-1-fast-reasoning)
    
-   # Optional Live Search configuration:
-   # XAI_SEARCH_MODE=on (on|auto|off, defaults to 'on' to force Live Search)
-   # XAI_MAX_SEARCH_RESULTS=10 (defaults to 10)
-   # XAI_RETURN_CITATIONS=true (defaults to true)
+   # Optional debugging:
    # XAI_DEBUG_RESPONSE=false (set to 'true' to enable diagnostic logging)
    ```
 

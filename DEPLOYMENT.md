@@ -409,9 +409,6 @@ npm install express dotenv cors
 # Create .env file with your API key and configuration
 echo "XAI_API_KEY=your_key_here" > .env
 echo "XAI_MODEL=grok-4-1-fast-reasoning" >> .env
-echo "XAI_SEARCH_MODE=on" >> .env
-echo "XAI_MAX_SEARCH_RESULTS=10" >> .env
-echo "XAI_RETURN_CITATIONS=true" >> .env
 echo "XAI_DEBUG_RESPONSE=false" >> .env
 
 # Run the server
